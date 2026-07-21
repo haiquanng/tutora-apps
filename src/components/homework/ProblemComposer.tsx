@@ -8,12 +8,14 @@ interface Props {
   disabled?: boolean;
   /** Hết quota -> khoá nộp bài và hiện lý do. */
   blockedReason?: string;
+
+  size?: 'default' | 'hero';
 }
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 /** Ô nhập đề: gõ chữ, tải ảnh, hoặc chụp camera. Hỗ trợ kéo-thả và dán ảnh. */
-export const ProblemComposer = ({ onSubmit, disabled, blockedReason }: Props) => {
+export const ProblemComposer = ({ onSubmit, disabled, blockedReason, size = 'default' }: Props) => {
   const [text, setText] = useState('');
   const [image, setImage] = useState<string | null>(null);
   const [isCameraOpen, setCameraOpen] = useState(false);
@@ -28,8 +30,10 @@ export const ProblemComposer = ({ onSubmit, disabled, blockedReason }: Props) =>
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight}px`;
-  }, [text]);
+    // Set height inline sẽ ghi đè min-h-* của Tailwind -> phải tự kẹp sàn ở đây.
+    const minHeight = size === 'hero' ? 80 : 0;
+    el.style.height = `${Math.max(el.scrollHeight, minHeight)}px`;
+  }, [text, size]);
 
   const readFile = useCallback((file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -81,7 +85,7 @@ export const ProblemComposer = ({ onSubmit, disabled, blockedReason }: Props) =>
           const file = Array.from(e.clipboardData.files)[0];
           if (file) readFile(file);
         }}
-        className={`rounded-2xl border bg-white px-3 py-2 shadow-card transition ${
+        className={`rounded-2xl border bg-white shadow-card transition ${size === 'hero' ? 'px-4 py-3' : 'px-3 py-2'} ${
           isDragging ? 'border-gold bg-cream-light/50' : 'border-navy/15'
         }`}
       >

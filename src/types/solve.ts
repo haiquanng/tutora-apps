@@ -1,4 +1,3 @@
-/** Một lượt hội thoại gửi lên /solve (AI stateless -> FE giữ history). */
 export interface SolveMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -14,11 +13,6 @@ export interface SolveRequest {
   chat_id?: string;
   message_id?: string;
   history: SolveMessage[];
-  /**
-   * "steps" -> backend gửi kèm các bước đã tách cấu trúc cho canvas.
-   * Mặc định của backend là "markdown" (giữ tương thích Zalo bot / mobile),
-   * nên web luôn phải gửi "steps" tường minh.
-   */
   response_format?: 'markdown' | 'steps';
 }
 

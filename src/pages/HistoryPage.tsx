@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, Clock, ImageIcon, Trash2, Type } from 'lucide-react';
+import { Skeleton } from '../components/ui/Skeleton';
 import { clearHistory, getHistory, removeHistoryItem } from '../services/history.service';
 import type { SubmitMode } from '../types/solve';
 
@@ -12,6 +13,20 @@ const MODE_ICON: Record<SubmitMode, typeof Type> = {
 
 const formatTime = (ts: number) =>
   new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(ts);
+
+export const HistorySkeleton = () => (
+  <ul className="space-y-2">
+    {Array.from({ length: 5 }).map((_, i) => (
+      <li key={i} className="flex items-center gap-3 rounded-2xl border border-navy/10 bg-white p-3">
+        <Skeleton className="size-12 shrink-0 rounded-xl" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <Skeleton className="h-4 w-3/5" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+      </li>
+    ))}
+  </ul>
+);
 
 export const HistoryPage = () => {
   const [items, setItems] = useState(getHistory);

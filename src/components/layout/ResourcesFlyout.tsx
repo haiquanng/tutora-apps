@@ -1,40 +1,68 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Lock } from 'lucide-react';
-import { SUBJECTS, groupByTopic } from '../../data/subjects';
-import type { Subject } from '../../data/subjects';
+import { Skeleton } from '../ui/Skeleton';
+import { useSubjects } from '../../hooks/useSubjects';
+import { groupByGrade } from '../../services/lookup.service';
 
 interface Props {
   onNavigate: () => void;
 }
 
-/**
- * Flyout 2 cấp cho mục "Tài nguyên" (tham khảo Gauth):
- * cột môn -> hover môn mở cột chủ đề/chương bên phải.
- * Phase 1 chỉ Toán mở, môn khác khoá.
- */
 export const ResourcesFlyout = ({ onNavigate }: Props) => {
-  const [activeId, setActiveId] = useState<string>(SUBJECTS[0].id);
+  const { subjects, isLoading, error } = useSubjects();
+  const [activeId, setActiveId] = useState<number | null>(null);
   const navigate = useNavigate();
 
-  const active = SUBJECTS.find((s) => s.id === activeId);
-  const topics = active && !active.locked ? groupByTopic(active.chapters) : [];
+  useEffect(() => {
+    if (activeId === null && subjects.length) {
+      setActiveId((subjects.find((s) => !s.locked) ?? subjects[0]).id);
+    }
+  }, [subjects, activeId]);
+
+  const active = subjects.find((s) => s.id === activeId);
+  const grades = active && !active.locked ? groupByGrade(active.chapters) : [];
 
   const openChapter = (name: string, grade: number) => {
     navigate('/', {
-      state: {
-        prefill: `Cho mình một bài tập mẫu về "${name}" lớp ${grade} kèm lời giải từng bước.`,
-      },
+      state: { prefill: `Cho mình một bài tập mẫu về "${name}" lớp ${grade} kèm lời giải từng bước.` },
     });
     onNavigate();
   };
+
+  if (error) {
+    return (
+      <div className="w-64 rounded-2xl border border-navy/10 bg-white p-6 text-sm text-navy/50 shadow-soft">
+        {error}
+      </div>
+    );
+  }
+
+  // Skeleton dựng đúng 2 cột của flyout -> mở ra là thấy khung ngay, không nhảy.
+  if (isLoading) {
+    return (
+      <div className="flex max-h-[min(70vh,32rem)] flex-col overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-soft lg:flex-row">
+        <div className="shrink-0 space-y-1 p-2 lg:w-52">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-9 w-full rounded-xl" />
+          ))}
+        </div>
+        <div className="hidden shrink-0 space-y-2 border-navy/10 p-3 lg:block lg:w-64 lg:border-l">
+          <Skeleton className="h-3 w-16" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-7 w-full rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // Mobile xếp dọc (sidebar chỉ rộng 18rem, 2 cột sẽ tràn); desktop 2 cột.
   return (
     <div className="flex max-h-[min(70vh,32rem)] flex-col overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-soft lg:flex-row">
       {/* Cột 1: môn */}
       <ul className="max-h-48 shrink-0 overflow-y-auto p-2 lg:max-h-none lg:w-52">
-        {SUBJECTS.map((subject: Subject) => {
+        {subjects.map((subject) => {
           const isActive = subject.id === activeId;
           return (
             <li key={subject.id}>
@@ -63,7 +91,7 @@ export const ResourcesFlyout = ({ onNavigate }: Props) => {
         })}
       </ul>
 
-      {/* Cột 2: chủ đề + chương của môn đang chọn */}
+      {/* Cột 2: chương của môn đang chọn, gom theo khối lớp */}
       <div className="shrink-0 overflow-y-auto border-t border-navy/10 p-3 lg:w-64 lg:border-l lg:border-t-0">
         {active?.locked && (
           <div className="flex h-full flex-col items-center justify-center px-4 text-center">
@@ -73,9 +101,9 @@ export const ResourcesFlyout = ({ onNavigate }: Props) => {
           </div>
         )}
 
-        {topics.map(({ topic, chapters }) => (
-          <div key={topic} className="mb-3 last:mb-0">
-            <p className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-navy/40">{topic}</p>
+        {grades.map(({ grade, chapters }) => (
+          <div key={grade} className="mb-3 last:mb-0">
+            <p className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-navy/40">Lớp {grade}</p>
             {chapters.map((chapter) => (
               <button
                 key={chapter.id}
@@ -84,7 +112,6 @@ export const ResourcesFlyout = ({ onNavigate }: Props) => {
                 className="flex w-full cursor-pointer items-baseline gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-navy/70 transition hover:bg-cream-light hover:text-navy"
               >
                 <span className="flex-1">{chapter.name}</span>
-                <span className="shrink-0 text-xs text-navy/30">{chapter.grade}</span>
               </button>
             ))}
           </div>

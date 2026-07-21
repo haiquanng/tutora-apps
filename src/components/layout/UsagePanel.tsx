@@ -4,10 +4,6 @@ interface Props {
   quota: QuotaView;
 }
 
-/**
- * Tóm tắt hạn mức ở đáy sidebar — chỉ số lượt còn lại + thanh tiến độ.
- * Chi tiết đầy đủ (chu kỳ, số lớp, nút nâng cấp) nằm trong AccountMenu.
- */
 export const UsagePanel = ({ quota }: Props) => {
   const percent = quota.limit ? Math.min(100, (quota.used / quota.limit) * 100) : 0;
 

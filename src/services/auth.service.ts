@@ -1,22 +1,6 @@
 /**
  * Xác thực dùng chung tài khoản với web chính Tutora.
  *
- * QUAN TRỌNG — apps.tutora.vn KHÁC origin với web chính nên localStorage KHÔNG
- * dùng chung được. App này cũng KHÔNG có trang login riêng: bấm Đăng nhập ->
- * sang web chính -> quay lại theo ?returnUrl.
- *
- * CÁCH HOẠT ĐỘNG HIỆN TẠI (tạm thời):
- *   Web chính đính token vào fragment của returnUrl, app này đọc bằng
- *   consumeSessionFromUrl() rồi xoá khỏi URL ngay. BE xác thực bằng Bearer.
- *
- * TRẠNG THÁI BE (đã kiểm tra Tutora-Backend/Program.cs):
- *   - JWT thuần Bearer; JwtBearerEvents chỉ đọc token từ query string cho SignalR,
- *     CHƯA đọc cookie -> SSO qua cookie chưa hoạt động.
- *   - Không có /auth/me -> dùng GET /api/users/profile.
- *   - Không có /auth/logout -> dùng POST /api/tokens/revoke.
- *   - CORS đã thêm localhost:5180 + apps.tutora.vn.
- *
- * TODO(BE) để bỏ hẳn việc truyền token qua URL:
  *   1. set token vào cookie HttpOnly, Domain=.tutora.vn, SameSite=Lax
  *   2. JwtBearerEvents.OnMessageReceived đọc thêm token từ cookie đó
  *   Khi xong: xoá consumeSessionFromUrl + appendSessionToReturnUrl bên Tutora-FE.

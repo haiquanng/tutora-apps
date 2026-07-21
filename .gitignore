@@ -1,25 +1,25 @@
-# === Dependencies ===
+# Dependencies
 node_modules
 
-# === Build output ===
+# Build output
 dist
 dist-ssr
 *.local
 
-# === Env (bí mật — KHÔNG commit) ===
+# Env (bí mật — KHÔNG commit)
 # .env chứa AI_API_KEY của proxy dev, không được đẩy lên.
 .env
 .env.*
 !.env.example
 
-# === Lockfile ===
+# Lockfile
 # Dự án dùng npm -> giữ package-lock.json, chặn lockfile trình khác lọt vào.
 bun.lock
 bun.lockb
 yarn.lock
 pnpm-lock.yaml
 
-# === Logs ===
+# Logs
 logs
 *.log
 npm-debug.log*
@@ -28,13 +28,11 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# === Cache công cụ ===
 .eslintcache
 .cache
 *.tsbuildinfo
 coverage
 
-# === Editor / OS ===
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -44,3 +42,6 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+# AI
+CLAUDE.md

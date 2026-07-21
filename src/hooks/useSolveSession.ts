@@ -17,13 +17,6 @@ interface Options {
   onSessionStart?: (chatId: string) => void;
 }
 
-/**
- * Quản lý 1 PHIÊN CHAT liên tục (như Claude/GPT), không phải từng bài rời rạc.
- *
- * Mỗi lượt hỏi -> thêm 1 ChatTurn vào danh sách. Backend chỉ trả `steps` khi
- * nhận ra là bài toán; câu hỏi thường thì turn chỉ có markdown và UI render
- * dạng chat bình thường.
- */
 export const useSolveSession = ({ onSessionStart }: Options = {}) => {
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);

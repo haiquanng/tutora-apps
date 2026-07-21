@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { RotateCcw, TriangleAlert } from 'lucide-react';
 import { ProblemComposer } from '../components/homework/ProblemComposer';
+import { SubjectCloud } from '../components/homework/SubjectCloud';
+import { GradientText } from '../components/ui/GradientText';
+import { InlineMath } from '../components/ui/InlineMath';
 import { ChatTurnView } from '../components/homework/ChatTurnView';
 import { useSolveSession } from '../hooks/useSolveSession';
 import type { SubmitPayload } from '../hooks/useSolveSession';
@@ -9,10 +12,10 @@ import { useAuth } from '../hooks/useAuth';
 import { getHistoryItem } from '../services/history.service';
 import { savePendingPrompt, takePendingPrompt } from '../services/auth.service';
 
-const SAMPLES = [
-  'Giải phương trình x² - 5x + 6 = 0',
-  'Tính đạo hàm của y = x·ln(x)',
-  'Tìm giới hạn lim(x→0) sin(3x)/x',
+const SAMPLES: { label: string; math: string; text: string }[] = [
+  { label: 'Giải phương trình', math: 'x^2 - 5x + 6 = 0', text: 'Giải phương trình x² - 5x + 6 = 0' },
+  { label: 'Tính đạo hàm của', math: 'y = x\\ln(x)', text: 'Tính đạo hàm của y = x·ln(x)' },
+  { label: 'Tìm giới hạn', math: '\\lim_{x\\to 0}\\frac{\\sin(3x)}{x}', text: 'Tìm giới hạn lim(x→0) sin(3x)/x' },
 ];
 
 interface Props {
@@ -21,7 +24,6 @@ interface Props {
 
 export const HomeworkPage = ({ onQuotaChange }: Props) => {
   const navigate = useNavigate();
-  // /c/:chatId -> 1 phiên chat có URL riêng, chia sẻ/refresh được.
   const { chatId } = useParams<{ chatId: string }>();
   const { user, login } = useAuth();
 
@@ -31,12 +33,6 @@ export const HomeworkPage = ({ onQuotaChange }: Props) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { turns, isStreaming, quota, loadFromHistory, reset } = session;
 
-  /**
-   * Gác cổng ở lúc GỬI, không chặn cả trang (giống GPT): người dùng cứ gõ thoải mái,
-   * bấm gửi mới yêu cầu đăng nhập — và đề bài được giữ lại để quay về gửi tiếp.
-   *
-   * `isFollowUp` = đang trong một phiên -> hỏi tiếp, giữ nguyên ngữ cảnh.
-   */
   const handleSend = useCallback(
     (payload: SubmitPayload, isFollowUp: boolean) => {
       if (!user) {
@@ -50,28 +46,21 @@ export const HomeworkPage = ({ onQuotaChange }: Props) => {
     [user, login, session],
   );
 
-  // Mở URL /c/:id trực tiếp (F5, dán link) -> nạp lại từ lịch sử đã lưu.
-  // loadedRef nhớ phiên đang hiển thị để không nạp/reset lặp lại mỗi lần render.
   const loadedRef = useRef<string | null>(null);
   useEffect(() => {
     if (chatId) {
       if (loadedRef.current === chatId) return;
       loadedRef.current = chatId;
       const item = getHistoryItem(chatId);
-      // Không có trong lịch sử = phiên vừa tạo (submit đã điều hướng sang đây)
-      // -> giữ nguyên state đang stream, KHÔNG reset.
       if (item) loadFromHistory(item);
       return;
     }
-    // Về "/" từ một phiên -> xoá hội thoại. Nếu vốn đã ở "/" thì không đụng gì
-    // (tránh xoá mất bài vừa gửi từ Tài nguyên).
     if (loadedRef.current !== null) {
       loadedRef.current = null;
       reset();
     }
   }, [chatId, loadFromHistory, reset]);
 
-  // Vừa đăng nhập xong quay về -> gửi tiếp đề đã gõ dở trước đó.
   const restoredRef = useRef(false);
   useEffect(() => {
     if (!user || restoredRef.current) return;
@@ -162,44 +151,48 @@ export const HomeworkPage = ({ onQuotaChange }: Props) => {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col overflow-y-auto px-4 py-6 lg:py-10">
-      <div className="flex flex-1 flex-col justify-center">
-        <h1 className="text-center font-serif text-3xl font-bold leading-tight text-navy sm:text-4xl">
-          Trợ lý giải bài tập
-          <br />
-          <span className="text-burgundy">Hiểu bài, không chỉ chép đáp án</span>
-        </h1>
-        <p className="mx-auto mt-3 max-w-md text-center text-navy/60">
-          Chụp ảnh, tải ảnh hoặc gõ đề — Tutora giải từng bước theo phương pháp trong sách giáo khoa.
-        </p>
+    <div className="flex flex-1 items-center justify-center overflow-y-auto px-4 py-6">
+      <div className="relative w-full max-w-2xl">
+        <div className="pointer-events-none absolute inset-x-0 bottom-full flex flex-col items-center pb-3">
+          <SubjectCloud />
+          <GradientText
+            animationSpeed={10}
+            className="mt-2 text-center font-serif text-3xl font-bold leading-tight sm:text-4xl"
+          >
+            AI Hỗ trợ bài tập của bạn
+          </GradientText>
+        </div>
 
-        <div className="mt-8">
+        <div>
           <ProblemComposer
             onSubmit={(p) => handleSend(p, false)}
             disabled={isStreaming}
             blockedReason={blockedReason}
+            size="hero"
           />
         </div>
 
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        {/* Cũng absolute (như cụm trang trí) để không kéo khung chat lệch khỏi tâm. */}
+        <div className="absolute inset-x-0 top-full flex flex-wrap justify-center gap-2 pt-4">
           {SAMPLES.map((sample) => (
             <button
-              key={sample}
+              key={sample.text}
               type="button"
-              onClick={() => handleSend({ mode: 'text', text: sample }, false)}
-              className="cursor-pointer rounded-full border border-navy/10 bg-white px-4 py-2 text-sm text-navy/70 transition hover:border-gold hover:text-navy"
+              onClick={() => handleSend({ mode: 'text', text: sample.text }, false)}
+              className="flex cursor-pointer items-center gap-1.5 rounded-full border border-navy/10 bg-white px-3 py-1.5 text-xs text-navy/60 transition hover:border-gold hover:text-navy"
             >
-              {sample}
+              <span>{sample.label}</span>
+              <InlineMath>{sample.math}</InlineMath>
             </button>
           ))}
-        </div>
 
-        {session.error && (
-          <p className="mt-4 flex items-center gap-2 rounded-xl bg-burgundy/10 px-4 py-3 text-sm text-burgundy">
-            <TriangleAlert className="size-4 shrink-0" />
-            {session.error}
-          </p>
-        )}
+          {session.error && (
+            <p className="flex w-full items-center justify-center gap-2 rounded-xl bg-burgundy/10 px-4 py-3 text-sm text-burgundy">
+              <TriangleAlert className="size-4 shrink-0" />
+              {session.error}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

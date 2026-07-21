@@ -1,10 +1,5 @@
 @import 'tailwindcss';
 
-/*
- * Design tokens = brand Tutora (đồng bộ Tutora-FE/src/styles/base/variables.css).
- * Khai báo ở @theme -> Tailwind sinh utility (bg-navy, text-burgundy...).
- * QUY TẮC: KHÔNG tạo file .css theo trang/component. Style bằng utility class.
- */
 @theme {
   --color-cream: #faf9f6;
   --color-cream-light: #f2f0e4;

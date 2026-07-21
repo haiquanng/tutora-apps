@@ -12,11 +12,9 @@ import { getQuota } from './services/quota.service';
 const DESKTOP_QUERY = '(min-width: 1024px)';
 
 const App = () => {
-  // Desktop mở sẵn, mobile đóng — toggle ở header dùng chung cho cả hai.
   const [isSidebarOpen, setSidebarOpen] = useState(() => window.matchMedia(DESKTOP_QUERY).matches);
   const [quota, setQuota] = useState(getQuota);
 
-  // Thu hẹp xuống mobile thì đóng sidebar để nó không che nội dung.
   useEffect(() => {
     const mql = window.matchMedia(DESKTOP_QUERY);
     const onChange = () => setSidebarOpen(mql.matches);
@@ -33,10 +31,11 @@ const App = () => {
         <Header quota={quota} onToggleSidebar={() => setSidebarOpen((v) => !v)} />
         <Sidebar quota={quota} isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        {/* pt-14 chừa chỗ Header; lề trái chỉ đẩy khi sidebar đang mở ở desktop.
-            h-screen (KHÔNG phải min-h-screen): phải có chiều cao cố định thì vùng
-            cuộn bên trong mới bị kẹp, ô nhập mới ghim được ở đáy. */}
-        <div className={`flex h-screen min-w-0 flex-col pt-14 transition-[padding] ${isSidebarOpen ? 'lg:pl-72' : ''}`}>
+        <div
+          className={`flex h-screen min-w-0 flex-col pt-14 transition-[padding] ${
+            isSidebarOpen ? 'lg:pl-72' : 'lg:pl-16'
+          }`}
+        >
           <main className="flex min-h-0 flex-1 flex-col">
             <Routes>
               <Route path="/" element={<HomeworkPage onQuotaChange={refreshQuota} />} />
