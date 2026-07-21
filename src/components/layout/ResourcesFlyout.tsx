@@ -23,10 +23,9 @@ export const ResourcesFlyout = ({ onNavigate }: Props) => {
   const active = subjects.find((s) => s.id === activeId);
   const grades = active && !active.locked ? groupByGrade(active.chapters) : [];
 
-  const openChapter = (name: string, grade: number) => {
-    navigate('/', {
-      state: { prefill: `Cho mình một bài tập mẫu về "${name}" lớp ${grade} kèm lời giải từng bước.` },
-    });
+  const openChapter = (chapterSlug: string) => {
+    if (!active?.slug) return;
+    navigate(`/resources/${active.slug}/${chapterSlug}`);
     onNavigate();
   };
 
@@ -108,7 +107,7 @@ export const ResourcesFlyout = ({ onNavigate }: Props) => {
               <button
                 key={chapter.id}
                 type="button"
-                onClick={() => openChapter(chapter.name, chapter.grade)}
+                onClick={() => openChapter(chapter.slug)}
                 className="flex w-full cursor-pointer items-baseline gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-navy/70 transition hover:bg-cream-light hover:text-navy"
               >
                 <span className="flex-1">{chapter.name}</span>

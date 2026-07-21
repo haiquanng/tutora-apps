@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { BookMarked, ChevronRight, Clock, House, Smartphone } from 'lucide-react';
 import { UsagePanel } from './UsagePanel';
 import { ResourcesFlyout } from './ResourcesFlyout';
@@ -33,6 +33,9 @@ export const Sidebar = ({ quota, isOpen, onClose }: Props) => {
   const resourcesRef = useRef<HTMLLIElement>(null);
   const flyoutRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<number | undefined>(undefined);
+
+  const { pathname } = useLocation();
+  const isResourcesActive = pathname === '/resources' || pathname.startsWith('/resources/');
 
   useEffect(() => {
     const mql = window.matchMedia(DESKTOP_QUERY);
@@ -132,7 +135,7 @@ export const Sidebar = ({ quota, isOpen, onClose }: Props) => {
                 title={collapsed ? 'Tài nguyên' : undefined}
                 className={`flex w-full cursor-pointer items-center gap-3 rounded-xl py-2.5 text-[15px] font-medium text-navy transition ${
                   collapsed ? 'justify-center px-0' : 'px-3'
-                } ${isResourcesOpen ? 'bg-cream-light' : 'hover:bg-cream-light/60'}`}
+                } ${isResourcesOpen || isResourcesActive ? 'bg-cream-light' : 'hover:bg-cream-light/60'}`}
               >
                 <BookMarked className="size-[18px] shrink-0" />
                 {!collapsed && (

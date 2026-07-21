@@ -29,3 +29,25 @@
 .katex-display {
   @apply overflow-x-auto overflow-y-hidden py-1;
 }
+
+:not(.katex-display) > .katex {
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 1.2;
+}
+
+/* Thanh cuộn mảnh cho các panel phụ (vd sidebar "Liên quan"). */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(26 34 56 / 0.2) transparent;
+}
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgb(26 34 56 / 0.2);
+  border-radius: 9999px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}

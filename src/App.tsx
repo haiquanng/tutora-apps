@@ -5,6 +5,8 @@ import { Sidebar } from './components/layout/Sidebar';
 import { HomeworkPage } from './pages/HomeworkPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { ResourcesPage } from './pages/ResourcesPage';
+import { StudyResourcePage } from './pages/StudyResourcePage';
+import { QuestionDetailPage } from './pages/QuestionDetailPage';
 import { AppPage } from './pages/AppPage';
 import { AuthProvider } from './hooks/AuthProvider';
 import { getQuota } from './services/quota.service';
@@ -36,13 +38,17 @@ const App = () => {
             isSidebarOpen ? 'lg:pl-72' : 'lg:pl-16'
           }`}
         >
-          <main className="flex min-h-0 flex-1 flex-col">
+          <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             <Routes>
               <Route path="/" element={<HomeworkPage onQuotaChange={refreshQuota} />} />
               {/* Mỗi cuộc hỏi bài có URL riêng -> chia sẻ / F5 / back đều giữ được. */}
               <Route path="/c/:chatId" element={<HomeworkPage onQuotaChange={refreshQuota} />} />
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/resources" element={<ResourcesPage />} />
+              <Route path="/resources/:subjectSlug" element={<StudyResourcePage />} />
+              <Route path="/resources/:subjectSlug/:chapterSlug" element={<StudyResourcePage />} />
+              <Route path="/resources/:subjectSlug/q/:questionId" element={<QuestionDetailPage />} />
+              <Route path="/resources/:subjectSlug/:chapterSlug/q/:questionId" element={<QuestionDetailPage />} />
               <Route path="/app" element={<AppPage />} />
             </Routes>
           </main>

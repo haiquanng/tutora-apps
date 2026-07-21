@@ -10,10 +10,10 @@ export const ResourcesPage = () => {
   const [openId, setOpenId] = useState<number | null>(null);
   const navigate = useNavigate();
 
-  const openChapter = (name: string, grade: number) =>
-    navigate('/', {
-      state: { prefill: `Cho mình một bài tập mẫu về "${name}" lớp ${grade} kèm lời giải từng bước.` },
-    });
+  const openChapter = (subjectSlug: string | null, chapterSlug: string) => {
+    if (!subjectSlug) return;
+    navigate(`/resources/${subjectSlug}/${chapterSlug}`);
+  };
 
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto px-4 py-8">
@@ -77,7 +77,7 @@ export const ResourcesPage = () => {
                           <button
                             key={chapter.id}
                             type="button"
-                            onClick={() => openChapter(chapter.name, chapter.grade)}
+                            onClick={() => openChapter(subject.slug, chapter.slug)}
                             className="cursor-pointer rounded-full border border-navy/10 px-3 py-1.5 text-sm text-navy/70 transition hover:border-gold hover:text-navy"
                           >
                             {chapter.name}
