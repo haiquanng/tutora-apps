@@ -1,4 +1,4 @@
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166';
+import { api } from './api.service';
 
 /** GET /api/subjects */
 interface SubjectDto {
@@ -7,7 +7,6 @@ interface SubjectDto {
   isActive: boolean;
   slug: string | null;
   iconUrl: string | null;
-  /** Cờ do BE quản lý: true = môn mở trong app giải bài tập. */
   isHomeworkEnabled: boolean;
   displayOrder: number;
 }
@@ -49,26 +48,14 @@ export interface Subject {
   chapters: Chapter[];
 }
 
-const fetchJson = async <T>(path: string): Promise<T[]> => {
-  const response = await fetch(`${BACKEND_URL}/api${path}`, {
-    credentials: 'include',
-    headers: { Accept: 'application/json' },
-  });
-  if (!response.ok) throw new Error(`${path} lỗi ${response.status}`);
-  const body = await response.json();
-  // BE .NET bọc payload trong { content: ... }.
-  return (body?.content ?? body ?? []) as T[];
-};
+const fetchList = <T>(path: string) => api.get<T[]>(path).then((r) => r ?? []);
 
-/**
- * Danh mục môn + chương cho trang Tài nguyên, lấy từ lookup API của Tutora-Backend.
- * Gọi song song 3 endpoint rồi ghép lại ở FE (BE không có endpoint gộp sẵn).
- */
+/** Danh mục môn + chương: gọi song song 3 endpoint lookup rồi ghép ở FE. */
 export const fetchSubjects = async (): Promise<Subject[]> => {
   const [subjects, grades, chapters] = await Promise.all([
-    fetchJson<SubjectDto>('/subjects'),
-    fetchJson<GradeLevelDto>('/grade-levels'),
-    fetchJson<ChapterDto>('/chapters'),
+    fetchList<SubjectDto>('/subjects'),
+    fetchList<GradeLevelDto>('/grade-levels'),
+    fetchList<ChapterDto>('/chapters'),
   ]);
 
   // gradeLevelId là khoá nội bộ (57..60), levelOrder mới là số lớp hiển thị.
@@ -84,8 +71,6 @@ export const fetchSubjects = async (): Promise<Subject[]> => {
       bySubject.set(c.subjectId, list);
     });
 
-  // BE đã sắp theo display_order (môn mở lên đầu do admin đặt) nên FE giữ nguyên,
-  // không tự sort. locked lấy thẳng từ cờ is_homework_enabled.
   return subjects
     .filter((s) => s.isActive)
     .map((s) => ({
@@ -98,7 +83,7 @@ export const fetchSubjects = async (): Promise<Subject[]> => {
     }));
 };
 
-/** Gom chương theo khối lớp để hiển thị (thay cho nhóm chủ đề hardcode trước đây). */
+/** Gom chương theo khối lớp để hiển thị. */
 export const groupByGrade = (chapters: Chapter[]): { grade: number; chapters: Chapter[] }[] => {
   const groups = new Map<number, Chapter[]>();
   chapters.forEach((c) => {

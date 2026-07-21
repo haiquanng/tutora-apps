@@ -1,10 +1,5 @@
 import type { SolutionStep, SolveChunk, SolveRequest } from '../types/solve';
-
-/**
- * Dev: để rỗng -> gọi đường dẫn tương đối, đi qua proxy của Vite (tránh CORS khi stream SSE).
- * Prod: build với VITE_AI_URL trỏ thẳng tutora-ai.
- */
-const AI_URL = import.meta.env.PROD ? import.meta.env.VITE_AI_URL || '' : '';
+import { AI_URL } from './api.service';
 
 export interface StreamHandlers {
   onDelta: (accumulated: string, delta: string) => void;

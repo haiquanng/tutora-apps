@@ -1,12 +1,4 @@
-/**
- * Xác thực dùng chung tài khoản với web chính Tutora.
- *
- *   1. set token vào cookie HttpOnly, Domain=.tutora.vn, SameSite=Lax
- *   2. JwtBearerEvents.OnMessageReceived đọc thêm token từ cookie đó
- *   Khi xong: xoá consumeSessionFromUrl + appendSessionToReturnUrl bên Tutora-FE.
- */
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166';
-const WEB_URL = import.meta.env.VITE_WEB_URL || 'http://localhost:5173';
+import { BACKEND_URL, WEB_URL } from './api.service';
 
 /** Key Tutora-FE đang dùng — chỉ đọc được khi chạy cùng origin (dev local). */
 const USER_LOCAL_STORAGE_KEY = 'TUTORA_user_data';
