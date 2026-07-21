@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronRight, Clock, LogOut, Zap } from 'lucide-react';
+import { ChevronRight, Clock, House, LogOut, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { WEB_URL } from '../../services/api.service';
 import type { QuotaView } from '../../services/quota.service';
 
 interface Props {
@@ -110,6 +111,17 @@ export const AccountMenu = ({ quota }: Props) => {
           )}
 
           <div className="my-2 border-t border-navy/10" />
+
+          <a
+            href={WEB_URL}
+            target="_blank"
+            onClick={() => setOpen(false)}
+            className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-navy/70 transition hover:bg-cream-light hover:text-navy"
+          >
+            <House className="size-4" />
+            <span className="flex-1 text-left">Đến trang chủ</span>
+            <ChevronRight className="size-4 text-navy/30" />
+          </a>
 
           <button
             type="button"
