@@ -13,6 +13,45 @@
 
   --shadow-soft: 0 20px 50px -12px rgb(26 34 56 / 0.08);
   --shadow-card: 0 4px 16px -4px rgb(26 34 56 / 0.1);
+
+  --animate-marquee: marquee 32s linear infinite;
+  --animate-border-beam: border-beam calc(var(--beam-duration, 8) * 1s) linear infinite;
+  --animate-shimmer: shimmer 2.5s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-100% - 1rem));
+  }
+}
+
+@keyframes border-beam {
+  to {
+    offset-distance: 100%;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 @layer base {
@@ -34,6 +73,24 @@
   display: inline-block;
   vertical-align: middle;
   line-height: 1.2;
+}
+
+.spotlight-card {
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+}
+.spotlight-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), var(--spotlight-color), transparent 70%);
+}
+.spotlight-card:hover::before,
+.spotlight-card:focus-within::before {
+  opacity: 1;
 }
 
 /* Thanh cuộn mảnh cho các panel phụ (vd sidebar "Liên quan"). */
