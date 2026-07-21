@@ -1,0 +1,36 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens = brand Tutora (đồng bộ Tutora-FE/src/styles/base/variables.css).
+ * Khai báo ở @theme -> Tailwind sinh utility (bg-navy, text-burgundy...).
+ * QUY TẮC: KHÔNG tạo file .css theo trang/component. Style bằng utility class.
+ */
+@theme {
+  --color-cream: #faf9f6;
+  --color-cream-light: #f2f0e4;
+  --color-navy: #1a2238;
+  --color-burgundy: #631b1b;
+  --color-gold: #d4b483;
+  --color-forest: #3d4a3e;
+
+  --font-sans: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-serif: 'IBM Plex Serif', Georgia, serif;
+
+  --shadow-soft: 0 20px 50px -12px rgb(26 34 56 / 0.08);
+  --shadow-card: 0 4px 16px -4px rgb(26 34 56 / 0.1);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    @apply bg-cream font-sans text-navy;
+  }
+}
+
+/* KaTeX trong bubble/step: cho phép cuộn ngang thay vì vỡ layout. */
+.katex-display {
+  @apply overflow-x-auto overflow-y-hidden py-1;
+}
