@@ -1,7 +1,4 @@
-import { BACKEND_URL, WEB_URL } from './api.service';
-
-/** Key Tutora-FE đang dùng — chỉ đọc được khi chạy cùng origin (dev local). */
-const USER_LOCAL_STORAGE_KEY = 'TUTORA_user_data';
+import { authHeader, BACKEND_URL, USER_LOCAL_STORAGE_KEY, WEB_URL } from './api.service';
 
 export interface AuthUser {
   id?: string;
@@ -70,7 +67,7 @@ export const fetchCurrentUser = async (): Promise<AuthUser | null> => {
       credentials: 'include',
       headers: {
         Accept: 'application/json',
-        ...(local?.accessToken ? { Authorization: `Bearer ${local.accessToken}` } : {}),
+        ...authHeader(),
       },
     });
     // 401/404 -> chưa đăng nhập hoặc BE chưa sẵn sàng; đừng chặn UI.
@@ -130,7 +127,7 @@ export const logout = async () => {
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        ...(local?.accessToken ? { Authorization: `Bearer ${local.accessToken}` } : {}),
+        ...authHeader(),
       },
       body: JSON.stringify({ refreshToken: local?.refreshToken ?? '' }),
     });

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { streamSolve } from '../services/solve.service';
 import { consumeQuota, getQuota } from '../services/quota.service';
-import { saveHistoryItem } from '../services/history.service';
-import type { ChatTurn, HistoryItem, SolveMessage, SubmitMode } from '../types/solve';
+import { createSession } from '../services/history.service';
+import type { ChatTurn, HistoryItem, SubmitMode } from '../types/solve';
 
 export interface SubmitPayload {
   mode: SubmitMode;
@@ -24,7 +24,6 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
   const [quota, setQuota] = useState(getQuota);
 
   const sessionIdRef = useRef<string>('');
-  const historyRef = useRef<SolveMessage[]>([]);
   const abortRef = useRef<(() => void) | null>(null);
   const modeRef = useRef<SubmitMode>('text');
   const turnsRef = useRef<ChatTurn[]>([]);
@@ -32,24 +31,9 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
   // Huỷ stream đang chạy khi unmount để tránh setState trên component đã gỡ.
   useEffect(() => () => abortRef.current?.(), []);
 
-  // Giữ bản mới nhất cho persist (đọc trong callback của stream).
   useEffect(() => {
     turnsRef.current = turns;
   }, [turns]);
-
-  const persist = useCallback((allTurns: ChatTurn[]) => {
-    const first = allTurns[0];
-    if (!sessionIdRef.current || !first) return;
-    saveHistoryItem({
-      id: sessionIdRef.current,
-      sessionId: sessionIdRef.current,
-      question: first.question,
-      thumbnail: first.image,
-      mode: modeRef.current,
-      turns: allTurns,
-      createdAt: Date.now(),
-    });
-  }, []);
 
   /** Cập nhật lượt đang stream (luôn là lượt cuối). */
   const patchLastTurn = useCallback((patch: Partial<ChatTurn>) => {
@@ -57,11 +41,11 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
   }, []);
 
   /**
-   * Gửi 1 lượt hỏi. `isNewSession` = true -> reset phiên và tạo chat_id mới;
-   * false -> hỏi tiếp trong phiên hiện tại (giữ chat_id + history).
+   * Gửi 1 lượt hỏi. `isNewSession` = true -> tạo phiên mới ở BE;
+   * false -> hỏi tiếp trong phiên hiện tại. BE tự lưu message + dựng history.
    */
   const send = useCallback(
-    (payload: SubmitPayload, isNewSession: boolean) => {
+    async (payload: SubmitPayload, isNewSession: boolean) => {
       const ask = payload.text?.trim() || 'Giải giúp mình bài trong ảnh này.';
       if (isStreaming) return;
       if (getQuota().isExhausted) {
@@ -74,12 +58,18 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
       setIsStreaming(true);
 
       if (isNewSession) {
-        historyRef.current = [];
-        // Sinh id ngay ở FE để điều hướng sang /c/:id trước khi backend trả lời.
-        sessionIdRef.current = crypto.randomUUID();
         modeRef.current = payload.mode;
         setTurns([]);
-        onSessionStart?.(sessionIdRef.current);
+        try {
+          // Phiên phải tồn tại ở BE trước khi stream (BE kiểm quyền sở hữu).
+          const session = await createSession(ask.slice(0, 100));
+          sessionIdRef.current = session.sessionId;
+          onSessionStart?.(session.sessionId);
+        } catch {
+          setError('Không tạo được phiên hỏi bài. Vui lòng thử lại.');
+          setIsStreaming(false);
+          return;
+        }
       }
 
       const turn: ChatTurn = {
@@ -93,12 +83,11 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
       setTurns((prev) => [...prev, turn]);
 
       abortRef.current = streamSolve(
+        sessionIdRef.current,
         {
           text: payload.text,
           // Backend nhận base64 thuần, không kèm prefix "data:image/...;base64,".
           image_base64: payload.imageDataUrl?.split(',')[1],
-          chat_id: sessionIdRef.current || undefined,
-          history: historyRef.current,
           response_format: 'steps',
         },
         {
@@ -107,14 +96,7 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
             setTurns((prev) =>
               prev.map((t, i) => (i === prev.length - 1 ? { ...t, steps: [...t.steps, ...incoming] } : t)),
             ),
-          onDone: (final, sessionId, finalSteps) => {
-            sessionIdRef.current = sessionId || sessionIdRef.current;
-            historyRef.current = [
-              ...historyRef.current,
-              { role: 'user', content: ask },
-              { role: 'assistant', content: final },
-            ];
-
+          onDone: (final, _sessionId, finalSteps) => {
             // finalSteps rỗng = câu hỏi thường -> giữ steps rỗng, UI render markdown.
             const next = turnsRef.current.map((t, i) =>
               i === turnsRef.current.length - 1
@@ -124,7 +106,6 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
             setTurns(next);
             setIsStreaming(false);
             setQuota(consumeQuota());
-            persist(next);
           },
           onError: (err) => {
             setError(err.message);
@@ -134,7 +115,7 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
         },
       );
     },
-    [isStreaming, onSessionStart, patchLastTurn, persist],
+    [isStreaming, onSessionStart, patchLastTurn],
   );
 
   /** Bài mới — reset phiên. */
@@ -160,25 +141,18 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
 
   const reset = useCallback(() => {
     abortRef.current?.();
-    historyRef.current = [];
     sessionIdRef.current = '';
     setTurns([]);
     setError(null);
     setIsStreaming(false);
   }, []);
 
-  /** Mở lại 1 phiên trong lịch sử — hỏi tiếp được vì khôi phục cả history. */
+  /** Mở lại 1 phiên trong lịch sử — hỏi tiếp được vì BE giữ ngữ cảnh theo session. */
   const loadFromHistory = useCallback((item: HistoryItem) => {
     abortRef.current?.();
     sessionIdRef.current = item.sessionId;
     modeRef.current = item.mode;
-    // item.turns có thể thiếu ở bản ghi cũ (trước khi đổi sang mô hình chat) -> phòng thủ.
-    const restored = item.turns ?? [];
-    historyRef.current = restored.flatMap((t) => [
-      { role: 'user' as const, content: t.question },
-      { role: 'assistant' as const, content: t.answer },
-    ]);
-    setTurns(restored);
+    setTurns(item.turns ?? []);
     setError(null);
     setIsStreaming(false);
   }, []);

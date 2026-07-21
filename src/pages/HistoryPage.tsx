@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, Clock, ImageIcon, Trash2, Type } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { clearHistory, getHistory, removeHistoryItem } from '../services/history.service';
-import type { SubmitMode } from '../types/solve';
+import type { HistoryItem, SubmitMode } from '../types/solve';
 
 const MODE_ICON: Record<SubmitMode, typeof Type> = {
   text: Type,
@@ -29,8 +29,31 @@ export const HistorySkeleton = () => (
 );
 
 export const HistoryPage = () => {
-  const [items, setItems] = useState(getHistory);
+  const [items, setItems] = useState<HistoryItem[]>([]);
+  const [isLoading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  const load = useCallback(() => {
+    setLoading(true);
+    getHistory()
+      .then(setItems)
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(load, [load]);
+
+  const handleClear = () => clearHistory().then(load);
+  const handleRemove = (id: string) => removeHistoryItem(id).then(load);
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto w-full max-w-3xl px-4 py-8">
+        <h1 className="mb-6 font-serif text-2xl font-bold">Lịch sử</h1>
+        <HistorySkeleton />
+      </div>
+    );
+  }
 
   if (!items.length) {
     return (
@@ -48,7 +71,7 @@ export const HistoryPage = () => {
         <h1 className="font-serif text-2xl font-bold">Lịch sử</h1>
         <button
           type="button"
-          onClick={() => setItems(clearHistory())}
+          onClick={handleClear}
           className="cursor-pointer text-sm font-medium text-navy/50 transition hover:text-burgundy"
         >
           Xoá tất cả
@@ -80,7 +103,7 @@ export const HistoryPage = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setItems(removeHistoryItem(item.id))}
+                  onClick={() => handleRemove(item.id)}
                   className="cursor-pointer rounded-lg p-2 text-navy/30 opacity-0 transition hover:text-burgundy group-hover:opacity-100"
                   aria-label="Xoá bài này"
                 >

@@ -16,7 +16,7 @@ interface Props {
  * - Không có steps (câu hỏi thường) -> chỉ render markdown như chat bình thường.
  */
 export const ChatTurnView = ({ turn, onAsk, disabled }: Props) => (
-  <div className="space-y-3">
+  <div className="space-y-4">
     {/* Câu hỏi của học sinh — canh phải như chat */}
     <div className="flex justify-end">
       <div className="max-w-[85%] rounded-2xl rounded-br-md bg-navy px-4 py-2.5 text-cream">
@@ -27,7 +27,7 @@ export const ChatTurnView = ({ turn, onAsk, disabled }: Props) => (
       </div>
     </div>
 
-    {/* Trả lời của Tutora */}
+    {/* Trả lời của Tutora — chiếm trọn bề ngang, không bọc bubble cho dễ đọc dài. */}
     {turn.steps.length > 0 ? (
       <div className="space-y-3">
         {turn.steps.map((step) => (
@@ -35,11 +35,7 @@ export const ChatTurnView = ({ turn, onAsk, disabled }: Props) => (
         ))}
       </div>
     ) : (
-      turn.answer && (
-        <div className="pr-6">
-          <Markdown>{turn.answer}</Markdown>
-        </div>
-      )
+      turn.answer && <Markdown>{turn.answer}</Markdown>
     )}
 
     {turn.isStreaming && (

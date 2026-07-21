@@ -5,6 +5,27 @@ export const AI_URL = import.meta.env.PROD ? import.meta.env.VITE_AI_URL || '' :
 
 const BASE = `${BACKEND_URL}/api`;
 
+/** Key localStorage dùng chung với Tutora-FE (web chính bàn giao phiên qua đây). */
+export const USER_LOCAL_STORAGE_KEY = 'TUTORA_user_data';
+
+/**
+ * BE xác thực bằng Bearer (chưa bật cookie .tutora.vn) nên phải tự đính token.
+ * Gửi kèm cả cookie để khi BE bật cookie thì không phải sửa lại.
+ */
+export const getAccessToken = (): string | undefined => {
+  try {
+    const raw = localStorage.getItem(USER_LOCAL_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as { accessToken?: string }).accessToken : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+export const authHeader = (): Record<string, string> => {
+  const token = getAccessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export class ApiError extends Error {
   status: number;
   unauthorized: boolean;
@@ -41,7 +62,7 @@ const buildUrl = (path: string, query?: RequestOptions['query']): string => {
 };
 
 const request = async <T>(method: string, path: string, opts: RequestOptions = {}): Promise<T> => {
-  const headers: Record<string, string> = { Accept: 'application/json' };
+  const headers: Record<string, string> = { Accept: 'application/json', ...authHeader() };
   const init: RequestInit = { method, credentials: 'include', headers, signal: opts.signal };
 
   if (opts.body !== undefined) {

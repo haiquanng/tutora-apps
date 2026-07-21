@@ -1,22 +1,12 @@
-export interface SolveMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
-
-/** Body của POST /api/v1/solve. Cần ít nhất 1 trong text/image_base64/image_url. */
 export interface SolveRequest {
   text?: string;
   image_base64?: string;
   image_url?: string;
   grade?: number | null;
   chapter?: string | null;
-  chat_id?: string;
-  message_id?: string;
-  history: SolveMessage[];
   response_format?: 'markdown' | 'steps';
 }
 
-/** 1 SSE event từ /solve. */
 export interface SolveChunk {
   id: string;
   session_id: string;

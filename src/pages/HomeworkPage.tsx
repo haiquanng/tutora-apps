@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { RotateCcw, TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from 'lucide-react';
 import { ProblemComposer } from '../components/homework/ProblemComposer';
 import { SubjectCloud } from '../components/homework/SubjectCloud';
 import { GradientText } from '../components/ui/GradientText';
+import { Skeleton } from '../components/ui/Skeleton';
 import { InlineMath } from '../components/ui/InlineMath';
 import { ChatTurnView } from '../components/homework/ChatTurnView';
 import { useSolveSession } from '../hooks/useSolveSession';
@@ -47,18 +48,36 @@ export const HomeworkPage = ({ onQuotaChange }: Props) => {
   );
 
   const loadedRef = useRef<string | null>(null);
+  const turnsCountRef = useRef(0);
+  turnsCountRef.current = turns.length;
+
+  const [isLoadingHistory, setLoadingHistory] = useState(() => Boolean(chatId));
+
   useEffect(() => {
-    if (chatId) {
-      if (loadedRef.current === chatId) return;
-      loadedRef.current = chatId;
-      const item = getHistoryItem(chatId);
-      if (item) loadFromHistory(item);
+    if (!chatId) {
+      setLoadingHistory(false);
+      if (loadedRef.current !== null) {
+        loadedRef.current = null;
+        reset();
+      }
       return;
     }
-    if (loadedRef.current !== null) {
-      loadedRef.current = null;
-      reset();
+
+    if (loadedRef.current === chatId) return;
+    if (turnsCountRef.current > 0) {
+      loadedRef.current = chatId;
+      setLoadingHistory(false);
+      return;
     }
+
+    loadedRef.current = chatId;
+    setLoadingHistory(true);
+    getHistoryItem(chatId)
+      .then((item) => {
+        if (item) loadFromHistory(item);
+      })
+      .catch(() => undefined)
+      .finally(() => setLoadingHistory(false));
   }, [chatId, loadFromHistory, reset]);
 
   const restoredRef = useRef(false);
@@ -101,24 +120,45 @@ export const HomeworkPage = ({ onQuotaChange }: Props) => {
     ? `Bạn đã dùng hết ${quota.limit} lượt hỏi ${quota.period === 'week' ? 'tuần này' : 'tháng này'}.`
     : undefined;
 
+  if (isLoadingHistory && turns.length === 0) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-3xl space-y-10 px-4 py-6">
+            {[0, 1].map((i) => (
+              <div key={i} className="space-y-4">
+                <div className="flex justify-end">
+                  <Skeleton className="h-12 w-2/5 rounded-2xl" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-11/12" />
+                  <Skeleton className="h-4 w-4/5" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/5" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="shrink-0 bg-cream">
+          <div className="mx-auto w-full max-w-3xl px-4 pb-4 pt-2">
+            <ProblemComposer onSubmit={() => undefined} disabled blockedReason={blockedReason} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Đang có hội thoại -> bố cục chat: lượt cuộn ở trên, ô nhập ghim đáy.
   if (turns.length > 0) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-4xl px-4 py-6">
-            <div className="mb-4 flex justify-end">
-              <button
-                type="button"
-                onClick={() => navigate('/')}
-                className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-navy/10 bg-white px-3 py-1.5 text-sm font-medium text-navy/70 transition hover:text-navy"
-              >
-                <RotateCcw className="size-3.5" />
-                Bài mới
-              </button>
-            </div>
-
-            <div className="space-y-6">
+          {/* max-w-3xl: dòng ngắn hơn -> dễ đọc văn bản dài (như Claude/Gauth). */}
+          <div className="mx-auto w-full max-w-3xl px-4 py-6">
+            <div className="space-y-10">
               {turns.map((turn) => (
                 <ChatTurnView key={turn.id} turn={turn} onAsk={session.askAboutStep} disabled={isStreaming} />
               ))}
@@ -138,7 +178,7 @@ export const HomeworkPage = ({ onQuotaChange }: Props) => {
         <div className="relative shrink-0 bg-cream">
           {/* Dải mờ: nội dung cuộn tan dần vào nền thay vì bị cắt ngang đột ngột. */}
           <div className="pointer-events-none absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-cream to-transparent" />
-          <div className="mx-auto w-full max-w-4xl px-4 pb-4 pt-2">
+          <div className="mx-auto w-full max-w-3xl px-4 pb-4 pt-2">
             <ProblemComposer
               onSubmit={(p) => handleSend(p, true)}
               disabled={isStreaming}

@@ -1,5 +1,5 @@
 import type { SolutionStep, SolveChunk, SolveRequest } from '../types/solve';
-import { AI_URL } from './api.service';
+import { authHeader, BACKEND_URL } from './api.service';
 
 export interface StreamHandlers {
   onDelta: (accumulated: string, delta: string) => void;
@@ -10,20 +10,16 @@ export interface StreamHandlers {
 }
 
 /**
- * Gọi POST /api/v1/solve và đọc SSE stream.
- *
- * Không dùng EventSource vì endpoint là POST (EventSource chỉ GET) — đọc trực tiếp
- * ReadableStream rồi tự tách event theo "\n\n".
- *
+ * Stream lời giải qua BE: POST /api/ai-chat/sessions/{id}/solve.
  * @returns hàm abort để huỷ stream giữa chừng.
  */
-export const streamSolve = (body: SolveRequest, handlers: StreamHandlers): (() => void) => {
+export const streamSolve = (sessionId: string, body: SolveRequest, handlers: StreamHandlers): (() => void) => {
   const controller = new AbortController();
 
   const run = async () => {
-    const response = await fetch(`${AI_URL}/api/v1/solve`, {
+    const response = await fetch(`${BACKEND_URL}/api/ai-chat/sessions/${encodeURIComponent(sessionId)}/solve`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeader() },
       // Phiên nằm ở cookie .tutora.vn (xem auth.service), không phải Bearer token.
       credentials: 'include',
       body: JSON.stringify(body),
@@ -38,7 +34,6 @@ export const streamSolve = (body: SolveRequest, handlers: StreamHandlers): (() =
     const decoder = new TextDecoder();
     let buffer = '';
     let accumulated = '';
-    let sessionId = body.chat_id || '';
 
     for (;;) {
       const { done, value } = await reader.read();
@@ -61,7 +56,6 @@ export const streamSolve = (body: SolveRequest, handlers: StreamHandlers): (() =
           continue; // event lỗi -> bỏ qua, không làm gãy cả stream
         }
 
-        sessionId = chunk.session_id || sessionId;
         if (chunk.delta) {
           accumulated += chunk.delta;
           handlers.onDelta(accumulated, chunk.delta);
