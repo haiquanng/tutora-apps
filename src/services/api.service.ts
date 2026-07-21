@@ -1,7 +1,6 @@
 /** Nguồn URL DUY NHẤT cho cả app — sửa ở đây, không khai lại nơi khác. */
 export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166';
 export const WEB_URL = import.meta.env.VITE_WEB_URL || 'http://localhost:5173';
-export const AI_URL = import.meta.env.PROD ? import.meta.env.VITE_AI_URL || '' : '';
 
 const BASE = `${BACKEND_URL}/api`;
 
