@@ -97,8 +97,10 @@ export const HomeworkPage = ({ onQuotaChange }: Props) => {
   const location = useLocation();
   const prefill = (location.state as { prefill?: string } | null)?.prefill;
   const { submit } = session;
+  const sentPrefillRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!prefill || !user) return;
+    if (!prefill || !user || sentPrefillRef.current === prefill) return;
+    sentPrefillRef.current = prefill;
     // Xoá state trước khi submit để F5 không gửi lại đề cũ.
     navigate(location.pathname, { replace: true, state: null });
     submit({ mode: 'text', text: prefill });

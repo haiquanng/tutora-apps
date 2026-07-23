@@ -1,6 +1,7 @@
 import { Loader2 } from 'lucide-react';
 import { Markdown } from './Markdown';
 import { StepCard } from './StepCard';
+import { ThinkingBlock } from './ThinkingBlock';
 import type { ChatTurn, SolutionStep } from '../../types/solve';
 
 interface Props {
@@ -26,6 +27,8 @@ export const ChatTurnView = ({ turn, onAsk, disabled }: Props) => (
         <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{turn.question}</p>
       </div>
     </div>
+
+    {turn.thinking && <ThinkingBlock thinking={turn.thinking} isStreaming={turn.isStreaming} />}
 
     {/* Trả lời của Tutora — chiếm trọn bề ngang, không bọc bubble cho dễ đọc dài. */}
     {turn.steps.length > 0 ? (

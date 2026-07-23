@@ -3,6 +3,7 @@ import { authHeader, BACKEND_URL } from './api.service';
 
 export interface StreamHandlers {
   onDelta: (accumulated: string, delta: string) => void;
+  onThinking?: (accumulated: string, delta: string) => void;
   /** Backend vừa chốt xong một số bước -> nối vào canvas. */
   onSteps?: (steps: SolutionStep[]) => void;
   onDone: (final: string, sessionId: string, steps?: SolutionStep[]) => void;
@@ -34,6 +35,7 @@ export const streamSolve = (sessionId: string, body: SolveRequest, handlers: Str
     const decoder = new TextDecoder();
     let buffer = '';
     let accumulated = '';
+    let thinking = '';
 
     for (;;) {
       const { done, value } = await reader.read();
@@ -56,6 +58,10 @@ export const streamSolve = (sessionId: string, body: SolveRequest, handlers: Str
           continue; // event lỗi -> bỏ qua, không làm gãy cả stream
         }
 
+        if (chunk.thinking) {
+          thinking += chunk.thinking;
+          handlers.onThinking?.(thinking, chunk.thinking);
+        }
         if (chunk.delta) {
           accumulated += chunk.delta;
           handlers.onDelta(accumulated, chunk.delta);

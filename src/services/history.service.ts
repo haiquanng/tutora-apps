@@ -18,7 +18,7 @@ interface MessageDto {
   role: string;
   content: string;
   imageUrl: string | null;
-  metadata: { steps?: SolutionStep[] } | null;
+  metadata: { steps?: SolutionStep[]; thinking?: string } | null;
   createdAt: string;
 }
 
@@ -45,6 +45,7 @@ const toTurns = (messages: MessageDto[]): ChatTurn[] => {
     if (last && !last.answer) {
       last.answer = m.content;
       last.steps = m.metadata?.steps ?? [];
+      last.thinking = m.metadata?.thinking ?? undefined;
     }
   }
   return turns;

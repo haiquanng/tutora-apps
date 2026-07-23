@@ -2,8 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, Clock, ImageIcon, Trash2, Type } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { clearHistory, getHistory, removeHistoryItem } from '../services/history.service';
 import type { HistoryItem, SubmitMode } from '../types/solve';
+
+type PendingDelete = { type: 'all' } | { type: 'item'; id: string } | null;
 
 const MODE_ICON: Record<SubmitMode, typeof Type> = {
   text: Type,
@@ -31,6 +34,7 @@ export const HistorySkeleton = () => (
 export const HistoryPage = () => {
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [isLoading, setLoading] = useState(true);
+  const [pending, setPending] = useState<PendingDelete>(null);
   const navigate = useNavigate();
 
   const load = useCallback(() => {
@@ -43,8 +47,13 @@ export const HistoryPage = () => {
 
   useEffect(load, [load]);
 
-  const handleClear = () => clearHistory().then(load);
-  const handleRemove = (id: string) => removeHistoryItem(id).then(load);
+  // Thực thi sau khi người dùng xác nhận trong hộp thoại.
+  const confirmDelete = useCallback(() => {
+    if (!pending) return;
+    const action = pending.type === 'all' ? clearHistory() : removeHistoryItem(pending.id);
+    setPending(null);
+    action.then(load);
+  }, [pending, load]);
 
   if (isLoading) {
     return (
@@ -71,7 +80,7 @@ export const HistoryPage = () => {
         <h1 className="font-serif text-2xl font-bold">Lịch sử</h1>
         <button
           type="button"
-          onClick={handleClear}
+          onClick={() => setPending({ type: 'all' })}
           className="cursor-pointer text-sm font-medium text-navy/50 transition hover:text-burgundy"
         >
           Xoá tất cả
@@ -103,7 +112,7 @@ export const HistoryPage = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleRemove(item.id)}
+                  onClick={() => setPending({ type: 'item', id: item.id })}
                   className="cursor-pointer rounded-lg p-2 text-navy/30 opacity-0 transition hover:text-burgundy group-hover:opacity-100"
                   aria-label="Xoá bài này"
                 >
@@ -114,6 +123,20 @@ export const HistoryPage = () => {
           );
         })}
       </ul>
+
+      <ConfirmDialog
+        open={pending !== null}
+        danger
+        title={pending?.type === 'all' ? 'Xoá tất cả lịch sử?' : 'Xoá bài này?'}
+        message={
+          pending?.type === 'all'
+            ? 'Lịch sử trò chuyện đã hỏi sẽ bị xoá và không khôi phục được.'
+            : 'Bài này sẽ bị xoá khỏi lịch sử và không khôi phục được.'
+        }
+        confirmLabel="Xoá"
+        onConfirm={confirmDelete}
+        onCancel={() => setPending(null)}
+      />
     </div>
   );
 };

@@ -1,10 +1,10 @@
 export interface SolveRequest {
   text?: string;
-  image_base64?: string;
-  image_url?: string;
+  imageBase64?: string;
+  imageUrl?: string;
   grade?: number | null;
   chapter?: string | null;
-  response_format?: 'markdown' | 'steps';
+  responseFormat?: 'markdown' | 'steps';
 }
 
 export interface SolveChunk {
@@ -12,6 +12,7 @@ export interface SolveChunk {
   session_id: string;
   delta: string;
   done: boolean;
+  thinking?: string;
   /** Các bước vừa hoàn tất trong chunk này (chỉ có khi response_format="steps"). */
   steps?: SolutionStep[];
   /** Danh sách bước đầy đủ, gửi kèm event done -> client thay thế toàn bộ. */
@@ -44,6 +45,7 @@ export interface ChatTurn {
   image?: string;
   answer: string;
   steps: SolutionStep[];
+  thinking?: string;
   /** Đang stream câu trả lời cho lượt này. */
   isStreaming?: boolean;
 }

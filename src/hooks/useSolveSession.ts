@@ -78,6 +78,7 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
         image: payload.imageDataUrl,
         answer: '',
         steps: [],
+        thinking: '',
         isStreaming: true,
       };
       setTurns((prev) => [...prev, turn]);
@@ -87,11 +88,12 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
         {
           text: payload.text,
           // Backend nhận base64 thuần, không kèm prefix "data:image/...;base64,".
-          image_base64: payload.imageDataUrl?.split(',')[1],
-          response_format: 'steps',
+          imageBase64: payload.imageDataUrl?.split(',')[1],
+          responseFormat: 'markdown',
         },
         {
           onDelta: (accumulated) => patchLastTurn({ answer: accumulated }),
+          onThinking: (accumulated) => patchLastTurn({ thinking: accumulated }),
           onSteps: (incoming) =>
             setTurns((prev) =>
               prev.map((t, i) => (i === prev.length - 1 ? { ...t, steps: [...t.steps, ...incoming] } : t)),
