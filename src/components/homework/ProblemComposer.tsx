@@ -1,6 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowUp, Camera, ImagePlus, X } from 'lucide-react';
-import { CameraCapture } from './CameraCapture';
+import { ArrowUp, ImagePlus, X, PanelRight } from 'lucide-react';
 import type { SubmitPayload } from '../../hooks/useSolveSession';
 
 interface Props {
@@ -18,9 +17,10 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const ProblemComposer = ({ onSubmit, disabled, blockedReason, size = 'default' }: Props) => {
   const [text, setText] = useState('');
   const [image, setImage] = useState<string | null>(null);
-  const [isCameraOpen, setCameraOpen] = useState(false);
   const [isDragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Toggle Canvas: bật -> lượt này xin lời giải từng bước (mở canvas). Tắt -> chat thường.
+  const [wantCanvas, setWantCanvas] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -55,15 +55,15 @@ export const ProblemComposer = ({ onSubmit, disabled, blockedReason, size = 'def
   const handleSubmit = useCallback(() => {
     if (disabled || blockedReason) return;
     if (image) {
-      onSubmit({ mode: 'image', imageDataUrl: image, text: text.trim() || undefined });
+      onSubmit({ mode: 'image', imageDataUrl: image, text: text.trim() || undefined, wantCanvas });
     } else if (text.trim()) {
-      onSubmit({ mode: 'text', text: text.trim() });
+      onSubmit({ mode: 'text', text: text.trim(), wantCanvas });
     } else {
       return;
     }
     setText('');
     setImage(null);
-  }, [blockedReason, disabled, image, onSubmit, text]);
+  }, [blockedReason, disabled, image, onSubmit, text, wantCanvas]);
 
   const canSubmit = !disabled && !blockedReason && (Boolean(image) || text.trim().length > 0);
 
@@ -121,7 +121,7 @@ export const ProblemComposer = ({ onSubmit, disabled, blockedReason, size = 'def
 
         {/* Hàng nút gọn: chỉ icon, không nhãn chữ (tham khảo Claude). */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
@@ -131,14 +131,21 @@ export const ProblemComposer = ({ onSubmit, disabled, blockedReason, size = 'def
             >
               <ImagePlus className="size-[18px]" />
             </button>
+
+            {/* Toggle Canvas — bật thì lượt này trả lời dạng lời giải từng bước (mở canvas). */}
             <button
               type="button"
-              onClick={() => setCameraOpen(true)}
-              className="grid size-8 cursor-pointer place-items-center rounded-lg text-navy/50 transition hover:bg-cream-light hover:text-navy"
-              aria-label="Chụp ảnh"
-              title="Chụp ảnh"
+              onClick={() => setWantCanvas((v) => !v)}
+              aria-pressed={wantCanvas}
+              title="Trả lời dạng lời giải từng bước (Canvas)"
+              className={`flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition ${
+                wantCanvas
+                  ? 'border-gold bg-gold/10 text-burgundy'
+                  : 'border-navy/12 text-navy/50 hover:bg-cream-light hover:text-navy'
+              }`}
             >
-              <Camera className="size-[18px]" />
+              <PanelRight className="size-4" />
+              Canvas
             </button>
           </div>
 
@@ -168,15 +175,8 @@ export const ProblemComposer = ({ onSubmit, disabled, blockedReason, size = 'def
 
       {(error || blockedReason) && <p className="mt-2 px-2 text-sm text-burgundy">{error || blockedReason}</p>}
 
-      {isCameraOpen && (
-        <CameraCapture
-          onClose={() => setCameraOpen(false)}
-          onCapture={(dataUrl) => {
-            setImage(dataUrl);
-            setCameraOpen(false);
-          }}
-        />
-      )}
+      {/* Disclaimer chung — hiện dưới box chat ở mọi trang (như ChatGPT/Claude). */}
+      <p className="mt-2 text-center text-xs text-navy/40">AI có thể mắc lỗi. Hãy kiểm tra thông tin quan trọng.</p>
     </div>
   );
 };

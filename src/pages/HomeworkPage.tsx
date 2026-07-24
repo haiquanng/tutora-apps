@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert, PanelRight } from 'lucide-react';
 import { ProblemComposer } from '../components/homework/ProblemComposer';
 import { SubjectCloud } from '../components/homework/SubjectCloud';
 import { GradientText } from '../components/ui/GradientText';
 import { Skeleton } from '../components/ui/Skeleton';
 import { InlineMath } from '../components/ui/InlineMath';
 import { ChatTurnView } from '../components/homework/ChatTurnView';
+import { CanvasPanel } from '../components/homework/CanvasPanel';
+import { ResizeHandle } from '../components/homework/ResizeHandle';
 import { useSolveSession } from '../hooks/useSolveSession';
 import type { SubmitPayload } from '../hooks/useSolveSession';
 import { useAuth } from '../hooks/useAuth';
 import { getHistoryItem } from '../services/history.service';
+import { createNote } from '../services/notes.service';
 import { savePendingPrompt, takePendingPrompt } from '../services/auth.service';
+import { useCanvasStore } from '../stores/canvasStore';
 
 const SAMPLES: { label: string; math: string; text: string }[] = [
   { label: 'Giải phương trình', math: 'x^2 - 5x + 6 = 0', text: 'Giải phương trình x² - 5x + 6 = 0' },
@@ -21,18 +25,99 @@ const SAMPLES: { label: string; math: string; text: string }[] = [
 
 interface Props {
   onQuotaChange: () => void;
+  onNotesChange?: () => void;
 }
 
-export const HomeworkPage = ({ onQuotaChange }: Props) => {
+export const HomeworkPage = ({ onQuotaChange, onNotesChange }: Props) => {
   const navigate = useNavigate();
   const { chatId } = useParams<{ chatId: string }>();
   const { user, login } = useAuth();
 
-  const onSessionStart = useCallback((id: string) => navigate(`/c/${id}`), [navigate]);
+  const [noteSaveState, setNoteSaveState] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
+
+  const loadedRef = useRef<string | null>(null);
+
+  const onSessionStart = useCallback(
+    (id: string) => {
+      loadedRef.current = id;
+      navigate(`/c/${id}`);
+    },
+    [navigate],
+  );
   const session = useSolveSession({ onSessionStart });
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { turns, isStreaming, quota, loadFromHistory, reset } = session;
+  const { turns, isStreaming, quota, loadFromHistory, reset, sessionId: turnsSessionId } = session;
+
+  const canvas = useCanvasStore();
+  const pushedRef = useRef<Set<string>>(new Set());
+  const savingVersionsRef = useRef<Set<string>>(new Set());
+  const openNextCanvasRef = useRef(false);
+  const [draggingCanvas, setDraggingCanvas] = useState(false);
+
+  const [isLoadingHistory, setLoadingHistory] = useState(() => Boolean(chatId));
+
+  useEffect(() => {
+    if (!chatId) return;
+    if (turnsSessionId !== chatId || isLoadingHistory) return;
+    for (const t of turns) {
+      if (t.isStreaming) continue;
+      if (!t.steps.length) {
+        if (!pushedRef.current.has(t.id)) {
+          pushedRef.current.add(t.id);
+          openNextCanvasRef.current = false;
+        }
+        continue;
+      }
+      if (pushedRef.current.has(t.id)) continue;
+      pushedRef.current.add(t.id);
+      const autoOpen = openNextCanvasRef.current;
+      openNextCanvasRef.current = false;
+      canvas.pushVersion(
+        chatId,
+        {
+          label: t.question,
+          steps: t.steps,
+          answerSummary: t.answer,
+          noteSaved: t.noteSaved,
+        },
+        autoOpen,
+      );
+    }
+  }, [turns, chatId, canvas, isLoadingHistory, turnsSessionId]);
+
+  const closeCanvas = useCallback(() => canvas.close(), [canvas]);
+
+  // Lưu version canvas đang xem thành Note (question_notes).
+  const saveNote = useCallback(async () => {
+    const v = canvas.versions[canvas.current];
+    if (!v) return;
+    const key = `v${v.createdAt}`;
+    if (savingVersionsRef.current.has(key)) return;
+    savingVersionsRef.current.add(key);
+    setNoteSaveState((s) => ({ ...s, [key]: 'saving' }));
+    try {
+      await createNote({
+        title: v.label.slice(0, 255),
+        sourceSessionId: chatId || undefined,
+        problemText: v.label,
+        solutionSteps: v.steps,
+        answerSummary: v.answerSummary,
+      });
+      setNoteSaveState((s) => ({ ...s, [key]: 'saved' }));
+      onNotesChange?.();
+    } catch {
+      savingVersionsRef.current.delete(key); // lỗi -> cho lưu lại
+      setNoteSaveState((s) => ({ ...s, [key]: 'error' }));
+    }
+  }, [canvas, chatId, onNotesChange]);
+
+  // Đổi phiên (mở note khác / bài mới) -> reset canvas để không dính version bài cũ.
+  useEffect(() => {
+    canvas.reset();
+    pushedRef.current = new Set();
+    savingVersionsRef.current = new Set();
+  }, [chatId]);
 
   const handleSend = useCallback(
     (payload: SubmitPayload, isFollowUp: boolean) => {
@@ -41,17 +126,12 @@ export const HomeworkPage = ({ onQuotaChange }: Props) => {
         login();
         return;
       }
-      if (isFollowUp) session.sendFollowUp(payload.text ?? '', payload.imageDataUrl);
+      if (payload.wantCanvas) openNextCanvasRef.current = true;
+      if (isFollowUp) session.sendFollowUp(payload.text ?? '', payload.imageDataUrl, payload.wantCanvas);
       else session.submit(payload);
     },
     [user, login, session],
   );
-
-  const loadedRef = useRef<string | null>(null);
-  const turnsCountRef = useRef(0);
-  turnsCountRef.current = turns.length;
-
-  const [isLoadingHistory, setLoadingHistory] = useState(() => Boolean(chatId));
 
   useEffect(() => {
     if (!chatId) {
@@ -63,9 +143,7 @@ export const HomeworkPage = ({ onQuotaChange }: Props) => {
       return;
     }
 
-    if (loadedRef.current === chatId) return;
-    if (turnsCountRef.current > 0) {
-      loadedRef.current = chatId;
+    if (loadedRef.current === chatId) {
       setLoadingHistory(false);
       return;
     }
@@ -153,41 +231,122 @@ export const HomeworkPage = ({ onQuotaChange }: Props) => {
     );
   }
 
-  // Đang có hội thoại -> bố cục chat: lượt cuộn ở trên, ô nhập ghim đáy.
   if (turns.length > 0) {
+    const currentVersion = canvas.versions[canvas.current] ?? null;
+    const panelOpen = canvas.isOpen && currentVersion !== null;
+    const hasCanvas = canvas.versions.length > 0;
     return (
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto">
-          {/* max-w-3xl: dòng ngắn hơn -> dễ đọc văn bản dài (như Claude/Gauth). */}
-          <div className="mx-auto w-full max-w-3xl px-4 py-6">
-            <div className="space-y-10">
-              {turns.map((turn) => (
-                <ChatTurnView key={turn.id} turn={turn} onAsk={session.askAboutStep} disabled={isStreaming} />
-              ))}
+      <div className="relative flex min-h-0 flex-1">
+        {/* Cột CHAT */}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {hasCanvas && (
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-navy/8 bg-cream px-4 py-2">
+              <p className="text-xs text-navy">Khi cần chỉnh sửa canvas, vui lòng chọn vào Canvas tại khung chat.</p>
+              <button
+                type="button"
+                onClick={() => (panelOpen ? closeCanvas() : chatId && canvas.open(chatId))}
+                aria-pressed={panelOpen}
+                className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                  panelOpen
+                    ? 'border-gold bg-gold/10 text-burgundy'
+                    : 'border-navy/12 text-navy/70 hover:border-gold hover:text-navy'
+                }`}
+              >
+                <PanelRight className="size-4" />
+                Canvas
+                {canvas.versions.length > 1 && (
+                  <span className="rounded-full bg-cream-light px-1.5 text-[11px] text-navy/50">
+                    {canvas.versions.length}
+                  </span>
+                )}
+              </button>
             </div>
+          )}
 
-            {session.error && (
-              <p className="mt-4 flex items-center gap-2 rounded-xl bg-burgundy/10 px-4 py-3 text-sm text-burgundy">
-                <TriangleAlert className="size-4 shrink-0" />
-                {session.error}
-              </p>
+          <div ref={scrollRef} className="flex-1 overflow-y-auto">
+            <div className={`mx-auto w-full px-4 py-6 ${panelOpen ? 'max-w-none' : 'max-w-3xl'}`}>
+              <div className="space-y-10">
+                {turns.map((turn) => (
+                  <ChatTurnView
+                    key={turn.id}
+                    turn={turn}
+                    onOpenCanvas={() => {
+                      if (!chatId) return;
+                      const vi = canvas.versions.findIndex((v) => v.label === turn.question);
+                      canvas.open(chatId);
+                      if (vi >= 0) canvas.goToVersion(vi);
+                    }}
+                    isActiveInPanel={panelOpen && currentVersion?.label === turn.question}
+                  />
+                ))}
+              </div>
+
+              {session.error && (
+                <p className="mt-4 flex items-center gap-2 rounded-xl bg-burgundy/10 px-4 py-3 text-sm text-burgundy">
+                  <TriangleAlert className="size-4 shrink-0" />
+                  {session.error}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Ô nhập ghim đáy cột chat. */}
+          <div className="relative shrink-0 bg-cream">
+            <div className="pointer-events-none absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-cream to-transparent" />
+            <div className={`mx-auto w-full px-4 pb-4 pt-2 ${panelOpen ? 'max-w-none' : 'max-w-3xl'}`}>
+              <ProblemComposer
+                onSubmit={(p) => handleSend(p, true)}
+                disabled={isStreaming}
+                blockedReason={blockedReason}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Nền mờ mobile — chạm ngoài để đóng. Fade mượt. */}
+        <button
+          type="button"
+          aria-label="Đóng canvas"
+          onClick={closeCanvas}
+          className={`fixed inset-0 z-20 bg-navy/30 transition-opacity lg:hidden ${
+            panelOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+        />
+        <aside
+          className={`fixed inset-y-0 right-0 z-30 w-full overflow-hidden lg:static lg:z-0 lg:w-auto lg:shrink-0 lg:border-l lg:border-navy/12 ${
+            panelOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
+          } ${draggingCanvas ? '' : 'transition-[width,transform] duration-300 ease-out'}`}
+          style={{ width: panelOpen ? undefined : 0 }}
+        >
+          {/* Wrapper giữ width desktop (mobile full). Bọc riêng để lg:width áp dụng. */}
+          <div className="h-full lg:shrink-0" style={{ width: currentVersion ? canvas.width : 0 }}>
+            {currentVersion && (
+              <>
+                <ResizeHandle
+                  onResize={(w) => {
+                    setDraggingCanvas(true);
+                    canvas.setWidth(w);
+                  }}
+                  onDragEnd={() => setDraggingCanvas(false)}
+                />
+                <CanvasPanel
+                  title={currentVersion.label}
+                  steps={currentVersion.steps}
+                  onClose={closeCanvas}
+                  version={{
+                    total: canvas.versions.length,
+                    current: canvas.current,
+                    onChange: canvas.goToVersion,
+                  }}
+                  onSaveNote={saveNote}
+                  saveState={
+                    noteSaveState[`v${currentVersion.createdAt}`] ?? (currentVersion.noteSaved ? 'saved' : undefined)
+                  }
+                />
+              </>
             )}
           </div>
-        </div>
-
-        {/* Ghim đáy — luôn thấy ô nhập dù hội thoại dài bao nhiêu.
-            Không viền ngăn cách: nền liền mạch với vùng cuộn cho gọn. */}
-        <div className="relative shrink-0 bg-cream">
-          {/* Dải mờ: nội dung cuộn tan dần vào nền thay vì bị cắt ngang đột ngột. */}
-          <div className="pointer-events-none absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-cream to-transparent" />
-          <div className="mx-auto w-full max-w-3xl px-4 pb-4 pt-2">
-            <ProblemComposer
-              onSubmit={(p) => handleSend(p, true)}
-              disabled={isStreaming}
-              blockedReason={blockedReason}
-            />
-          </div>
-        </div>
+        </aside>
       </div>
     );
   }

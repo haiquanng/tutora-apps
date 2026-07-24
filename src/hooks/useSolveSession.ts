@@ -6,10 +6,9 @@ import type { ChatTurn, HistoryItem, SubmitMode } from '../types/solve';
 
 export interface SubmitPayload {
   mode: SubmitMode;
-  /** Đề bài dạng chữ (mode 'text'). */
   text?: string;
-  /** Ảnh data URL (mode 'image' | 'camera'). */
   imageDataUrl?: string;
+  wantCanvas?: boolean;
 }
 
 interface Options {
@@ -87,9 +86,8 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
         sessionIdRef.current,
         {
           text: payload.text,
-          // Backend nhận base64 thuần, không kèm prefix "data:image/...;base64,".
           imageBase64: payload.imageDataUrl?.split(',')[1],
-          responseFormat: 'markdown',
+          responseFormat: payload.wantCanvas ? 'steps' : 'markdown',
         },
         {
           onDelta: (accumulated) => patchLastTurn({ answer: accumulated }),
@@ -123,22 +121,11 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
   /** Bài mới — reset phiên. */
   const submit = useCallback((payload: SubmitPayload) => send(payload, true), [send]);
 
-  /** Hỏi tiếp trong phiên hiện tại (giữ ngữ cảnh). */
+  /** Hỏi tiếp trong phiên hiện tại (giữ ngữ cảnh). wantCanvas: xin lời giải từng bước. */
   const sendFollowUp = useCallback(
-    (ask: string, imageDataUrl?: string) =>
-      send({ mode: imageDataUrl ? 'image' : 'text', text: ask, imageDataUrl }, false),
+    (ask: string, imageDataUrl?: string, wantCanvas?: boolean) =>
+      send({ mode: imageDataUrl ? 'image' : 'text', text: ask, imageDataUrl, wantCanvas }, false),
     [send],
-  );
-
-  /** Nút "Giải thích kỹ hơn" ở một bước. */
-  const askAboutStep = useCallback(
-    (step: { index: number; title: string }, customQuestion?: string) => {
-      sendFollowUp(
-        customQuestion?.trim() ||
-          `Giải thích kỹ hơn giúp mình "${step.title}" (bước ${step.index + 1}): vì sao làm vậy và áp dụng công thức nào?`,
-      );
-    },
-    [sendFollowUp],
   );
 
   const reset = useCallback(() => {
@@ -161,12 +148,12 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
 
   return {
     turns,
+    sessionId: sessionIdRef.current,
     isStreaming,
     error,
     quota,
     submit,
     sendFollowUp,
-    askAboutStep,
     reset,
     loadFromHistory,
   };
