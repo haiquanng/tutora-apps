@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { NavLink, useLocation } from 'react-router-dom';
-import { BookMarked, ChevronRight, Clock, House, Smartphone } from 'lucide-react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { BookMarked, Bookmark, ChevronRight, House, Plus, Smartphone } from 'lucide-react';
 import { UsagePanel } from './UsagePanel';
 import { ResourcesFlyout } from './ResourcesFlyout';
+import { HistoryList } from './HistoryList';
 import type { QuotaView } from '../../services/quota.service';
+import type { HistoryItem } from '../../types/solve';
 
-const NAV_ITEMS = [
-  { to: '/', label: 'Giải bài tập', icon: House, end: true },
-  { to: '/history', label: 'Lịch sử', icon: Clock, end: false },
-];
+const NAV_ITEMS = [{ to: '/', label: 'Giải bài tập', icon: House, end: true }];
 
 const linkClass =
   (collapsed: boolean) =>
@@ -22,11 +21,16 @@ interface Props {
   quota: QuotaView;
   isOpen: boolean;
   onClose: () => void;
+  // Lịch sử chat (chat_sessions) — mở lại ở /c/:id. Note có TRANG RIÊNG /notes (list→detail).
+  history: HistoryItem[];
+  historyLoading: boolean;
+  onDeleteHistory: (id: string) => void;
 }
 
 const DESKTOP_QUERY = '(min-width: 1024px)'; // = breakpoint lg của Tailwind
 
-export const Sidebar = ({ quota, isOpen, onClose }: Props) => {
+export const Sidebar = ({ quota, isOpen, onClose, history, historyLoading, onDeleteHistory }: Props) => {
+  const navigate = useNavigate();
   const [isResourcesOpen, setResourcesOpen] = useState(false);
   const [anchor, setAnchor] = useState({ left: 0, top: 0 });
   const [isDesktop, setDesktop] = useState(() => window.matchMedia(DESKTOP_QUERY).matches);
@@ -45,6 +49,19 @@ export const Sidebar = ({ quota, isOpen, onClose }: Props) => {
   }, []);
 
   useEffect(() => () => window.clearTimeout(closeTimer.current), []);
+
+  useEffect(() => {
+    const el = document.createElement('style');
+    el.setAttribute('data-id', 'sidebar-scrollbar');
+    el.textContent = [
+      '.history-scroll-area::-webkit-scrollbar{width:4px;height:4px}',
+      '.history-scroll-area::-webkit-scrollbar-thumb{background:rgba(26,34,56,.55);border-radius:9999px}',
+      '.history-scroll-area::-webkit-scrollbar-thumb:hover{background:rgba(26,34,56,.75)}',
+      '.history-scroll-area::-webkit-scrollbar-track{background:transparent}',
+    ].join('');
+    document.head.appendChild(el);
+    return () => el.remove();
+  }, []);
 
   const cancelClose = () => window.clearTimeout(closeTimer.current);
 
@@ -110,7 +127,24 @@ export const Sidebar = ({ quota, isOpen, onClose }: Props) => {
           collapsed ? 'w-16' : 'w-72'
         } ${isOpen || isDesktop ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-3">
+        {/* Nav items cố định — không scroll */}
+        <nav className="shrink-0 overflow-x-hidden px-3 pt-3">
+          {/* Note mới — về trang trắng, đóng sidebar mobile. Kiểu nút "New chat" của Claude. */}
+          <button
+            type="button"
+            onClick={() => {
+              navigate('/');
+              if (!isDesktop) onClose();
+            }}
+            title={collapsed ? 'Note mới' : undefined}
+            className={`mb-2 flex w-full cursor-pointer items-center gap-2 rounded-xl border border-navy/10 bg-cream-light/60 py-2.5 text-[14px] font-semibold text-navy transition hover:border-gold hover:bg-cream-light ${
+              collapsed ? 'justify-center px-0' : 'px-3'
+            }`}
+          >
+            <Plus className="size-[18px] shrink-0" />
+            {!collapsed && 'Note mới'}
+          </button>
+
           <ul className="space-y-1">
             {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
               <li key={to}>
@@ -169,20 +203,49 @@ export const Sidebar = ({ quota, isOpen, onClose }: Props) => {
 
             <li>
               <NavLink
+                to="/notes"
+                onClick={closeFlyout}
+                className={linkClass(collapsed)}
+                title={collapsed ? 'Note của tôi' : undefined}
+              >
+                <Bookmark className="size-[18px] shrink-0" />
+                {!collapsed && 'Note của tôi'}
+              </NavLink>
+            </li>
+
+            <li>
+              <NavLink
                 to="/app"
                 onClick={closeFlyout}
                 className={linkClass(collapsed)}
                 title={collapsed ? 'Ứng dụng' : undefined}
               >
-                <Smartphone className="size-[18px] shrink-0" />
+                <Smartphone className="size-4.5 shrink-0" />
                 {!collapsed && 'Ứng dụng'}
               </NavLink>
             </li>
           </ul>
         </nav>
 
+        {/* Lịch sử — scroll độc lập, không kéo nav links lên theo */}
         {!collapsed && (
-          <div className="p-3">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-3">
+            <div className="border-t border-navy/5 pt-3">
+              <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wide text-navy/40">Lịch sử</p>
+            </div>
+            <div className="history-scroll-area flex-1 overflow-y-auto overflow-x-hidden pb-1">
+              <HistoryList
+                items={history}
+                isLoading={historyLoading}
+                onDelete={onDeleteHistory}
+                onNavigate={() => !isDesktop && onClose()}
+              />
+            </div>
+          </div>
+        )}
+
+        {!collapsed && (
+          <div className="shrink-0 p-3">
             <UsagePanel quota={quota} />
           </div>
         )}

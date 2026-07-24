@@ -7,8 +7,11 @@ import { HistoryPage } from './pages/HistoryPage';
 import { ResourcesPage } from './pages/ResourcesPage';
 import { StudyResourcePage } from './pages/StudyResourcePage';
 import { QuestionDetailPage } from './pages/QuestionDetailPage';
+import { NotePage } from './pages/NotePage';
+import { NotesListPage } from './pages/NotesListPage';
 import { AppPage } from './pages/AppPage';
 import { AuthProvider } from './hooks/AuthProvider';
+import { useHistory } from './hooks/useHistory';
 import { getQuota } from './services/quota.service';
 
 const DESKTOP_QUERY = '(min-width: 1024px)';
@@ -16,6 +19,7 @@ const DESKTOP_QUERY = '(min-width: 1024px)';
 const App = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(() => window.matchMedia(DESKTOP_QUERY).matches);
   const [quota, setQuota] = useState(getQuota);
+  const { items: history, isLoading: historyLoading, reload: reloadHistory, remove: removeHistory } = useHistory();
 
   useEffect(() => {
     const mql = window.matchMedia(DESKTOP_QUERY);
@@ -24,14 +28,23 @@ const App = () => {
     return () => mql.removeEventListener('change', onChange);
   }, []);
 
-  // HomeworkPage gọi lại sau mỗi lượt hỏi để panel hạn mức cập nhật.
-  const refreshQuota = useCallback(() => setQuota(getQuota()), []);
+  const refreshQuota = useCallback(() => {
+    setQuota(getQuota());
+    reloadHistory();
+  }, [reloadHistory]);
 
   return (
     <AuthProvider>
       <BrowserRouter>
         <Header quota={quota} onToggleSidebar={() => setSidebarOpen((v) => !v)} />
-        <Sidebar quota={quota} isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <Sidebar
+          quota={quota}
+          isOpen={isSidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          history={history}
+          historyLoading={historyLoading}
+          onDeleteHistory={removeHistory}
+        />
 
         <div
           className={`flex h-screen min-w-0 flex-col pt-14 transition-[padding] ${
@@ -43,6 +56,8 @@ const App = () => {
               <Route path="/" element={<HomeworkPage onQuotaChange={refreshQuota} />} />
               {/* Mỗi cuộc hỏi bài có URL riêng -> chia sẻ / F5 / back đều giữ được. */}
               <Route path="/c/:chatId" element={<HomeworkPage onQuotaChange={refreshQuota} />} />
+              <Route path="/notes" element={<NotesListPage />} />
+              <Route path="/notes/:noteId" element={<NotePage />} />
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/resources" element={<ResourcesPage />} />
               <Route path="/resources/:subjectSlug" element={<StudyResourcePage />} />
