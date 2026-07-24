@@ -92,19 +92,3 @@
 .spotlight-card:focus-within::before {
   opacity: 1;
 }
-
-/* Thanh cuộn mảnh cho các panel phụ (vd sidebar "Liên quan"). */
-.thin-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(26 34 56 / 0.2) transparent;
-}
-.thin-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-.thin-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgb(26 34 56 / 0.2);
-  border-radius: 9999px;
-}
-.thin-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
