@@ -38,8 +38,12 @@ export class ApiError extends Error {
 }
 
 const unwrap = <T>(body: unknown): T => {
-  const b = body as { content?: T } | T;
-  return (b as { content?: T })?.content ?? (b as T);
+  const b = body as { content?: T; data?: T } | T;
+  if (b && typeof b === 'object') {
+    if ('content' in b && (b as { content?: T }).content !== undefined) return (b as { content: T }).content;
+    if ('data' in b && (b as { data?: T }).data !== undefined) return (b as { data: T }).data;
+  }
+  return b as T;
 };
 
 interface RequestOptions {

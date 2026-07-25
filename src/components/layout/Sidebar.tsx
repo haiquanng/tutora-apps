@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { BookMarked, Bookmark, ChevronRight, House, Plus, Smartphone } from 'lucide-react';
+import { BookMarked, Bookmark, ChevronRight, House, Plus, Smartphone, Sparkles } from 'lucide-react';
 import { UsagePanel } from './UsagePanel';
 import { ResourcesFlyout } from './ResourcesFlyout';
 import { HistoryList } from './HistoryList';
-import type { QuotaView } from '../../services/quota.service';
+
 import type { HistoryItem } from '../../types/solve';
 
 const NAV_ITEMS = [{ to: '/', label: 'Giải bài tập', icon: House, end: true }];
@@ -18,7 +18,7 @@ const linkClass =
     } ${isActive ? 'bg-cream-light' : 'hover:bg-cream-light/60'}`;
 
 interface Props {
-  quota: QuotaView;
+  aiBalance: number | null;
   isOpen: boolean;
   onClose: () => void;
   // Lịch sử chat (chat_sessions) — mở lại ở /c/:id. Note có TRANG RIÊNG /notes (list→detail).
@@ -29,7 +29,7 @@ interface Props {
 
 const DESKTOP_QUERY = '(min-width: 1024px)'; // = breakpoint lg của Tailwind
 
-export const Sidebar = ({ quota, isOpen, onClose, history, historyLoading, onDeleteHistory }: Props) => {
+export const Sidebar = ({ aiBalance, isOpen, onClose, history, historyLoading, onDeleteHistory }: Props) => {
   const navigate = useNavigate();
   const [isResourcesOpen, setResourcesOpen] = useState(false);
   const [anchor, setAnchor] = useState({ left: 0, top: 0 });
@@ -245,8 +245,16 @@ export const Sidebar = ({ quota, isOpen, onClose, history, historyLoading, onDel
         )}
 
         {!collapsed && (
-          <div className="shrink-0 p-3">
-            <UsagePanel quota={quota} />
+          <div className="shrink-0 space-y-2 p-3">
+            <UsagePanel aiBalance={aiBalance} />
+            <NavLink
+              to="/upgrade"
+              onClick={() => !isDesktop && onClose()}
+              className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-gold px-3 py-2 text-sm font-semibold text-navy transition hover:brightness-105"
+            >
+              <Sparkles className="size-4" />
+              Nâng cấp hạn mức
+            </NavLink>
           </div>
         )}
       </aside>

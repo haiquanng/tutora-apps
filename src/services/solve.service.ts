@@ -10,6 +10,13 @@ export interface StreamHandlers {
   onError: (error: Error) => void;
 }
 
+export class OutOfCreditError extends Error {
+  constructor() {
+    super('Bạn đã hết lượt hỏi AI. Vui lòng nâng cấp để tiếp tục.');
+    this.name = 'OutOfCreditError';
+  }
+}
+
 /**
  * Stream lời giải qua BE: POST /api/ai-chat/sessions/{id}/solve.
  * @returns hàm abort để huỷ stream giữa chừng.
@@ -27,6 +34,9 @@ export const streamSolve = (sessionId: string, body: SolveRequest, handlers: Str
       signal: controller.signal,
     });
 
+    if (response.status === 402) {
+      throw new OutOfCreditError();
+    }
     if (!response.ok || !response.body) {
       throw new Error(`Solve failed: ${response.status}`);
     }

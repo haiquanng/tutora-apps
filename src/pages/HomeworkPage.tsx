@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { TriangleAlert, PanelRight } from 'lucide-react';
 import { ProblemComposer } from '../components/homework/ProblemComposer';
 import { SubjectCloud } from '../components/homework/SubjectCloud';
@@ -12,6 +12,7 @@ import { ResizeHandle } from '../components/homework/ResizeHandle';
 import { useSolveSession } from '../hooks/useSolveSession';
 import type { SubmitPayload } from '../hooks/useSolveSession';
 import { useAuth } from '../hooks/useAuth';
+import { toast } from 'sonner';
 import { getHistoryItem } from '../services/history.service';
 import { createNote } from '../services/notes.service';
 import { savePendingPrompt, takePendingPrompt } from '../services/auth.service';
@@ -24,13 +25,15 @@ const SAMPLES: { label: string; math: string; text: string }[] = [
 ];
 
 interface Props {
-  onQuotaChange: () => void;
+  onSolved: () => void;
   onNotesChange?: () => void;
 }
 
-export const HomeworkPage = ({ onQuotaChange, onNotesChange }: Props) => {
+export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
   const navigate = useNavigate();
-  const { chatId } = useParams<{ chatId: string }>();
+  const location = useLocation();
+  // HomeworkPage giờ LUÔN mounted (không nằm dưới route :chatId) → lấy chatId từ path.
+  const chatId = location.pathname.startsWith('/c/') ? decodeURIComponent(location.pathname.slice(3)) : undefined;
   const { user, login } = useAuth();
 
   const [noteSaveState, setNoteSaveState] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
@@ -44,10 +47,14 @@ export const HomeworkPage = ({ onQuotaChange, onNotesChange }: Props) => {
     },
     [navigate],
   );
-  const session = useSolveSession({ onSessionStart });
+  const onOutOfCredit = useCallback(() => {
+    toast.error('Bạn đã hết lượt hỏi AI. Nâng cấp để tiếp tục.');
+    navigate('/upgrade');
+  }, [navigate]);
+  const session = useSolveSession({ onSessionStart, onSolved, onOutOfCredit });
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { turns, isStreaming, quota, loadFromHistory, reset, sessionId: turnsSessionId } = session;
+  const { turns, isStreaming, loadFromHistory, reset, sessionId: turnsSessionId } = session;
 
   const canvas = useCanvasStore();
   const pushedRef = useRef<Set<string>>(new Set());
@@ -117,7 +124,7 @@ export const HomeworkPage = ({ onQuotaChange, onNotesChange }: Props) => {
     canvas.reset();
     pushedRef.current = new Set();
     savingVersionsRef.current = new Set();
-  }, [chatId]);
+  }, [chatId, canvas]);
 
   const handleSend = useCallback(
     (payload: SubmitPayload, isFollowUp: boolean) => {
@@ -172,7 +179,6 @@ export const HomeworkPage = ({ onQuotaChange, onNotesChange }: Props) => {
   }, [user, session]);
 
   // Chọn 1 chương ở Tài nguyên -> gửi đề luôn (state.prefill).
-  const location = useLocation();
   const prefill = (location.state as { prefill?: string } | null)?.prefill;
   const { submit } = session;
   const sentPrefillRef = useRef<string | null>(null);
@@ -184,11 +190,6 @@ export const HomeworkPage = ({ onQuotaChange, onNotesChange }: Props) => {
     submit({ mode: 'text', text: prefill });
   }, [prefill, user, submit, navigate, location.pathname]);
 
-  // Sidebar hiển thị quota -> đồng bộ lại sau mỗi lần trả lời xong.
-  useEffect(() => {
-    onQuotaChange();
-  }, [quota, onQuotaChange]);
-
   // Cuộn thẳng container (không dùng scrollIntoView) — vùng cuộn nằm trong
   // layout ghim đáy, scrollIntoView sẽ kéo lệch cả khung.
   useEffect(() => {
@@ -196,9 +197,8 @@ export const HomeworkPage = ({ onQuotaChange, onNotesChange }: Props) => {
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [turns]);
 
-  const blockedReason = quota.isExhausted
-    ? `Bạn đã dùng hết ${quota.limit} lượt hỏi ${quota.period === 'week' ? 'tuần này' : 'tháng này'}.`
-    : undefined;
+  // Hết lượt được xử lý qua BE (402) -> toast + điều hướng /upgrade; không chặn mock ở đây.
+  const blockedReason = undefined;
 
   if (isLoadingHistory && turns.length === 0) {
     return (
@@ -292,7 +292,7 @@ export const HomeworkPage = ({ onQuotaChange, onNotesChange }: Props) => {
 
           {/* Ô nhập ghim đáy cột chat. */}
           <div className="relative shrink-0 bg-cream">
-            <div className="pointer-events-none absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-cream to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 -top-6 h-6 bg-linear-to-t from-cream to-transparent" />
             <div className={`mx-auto w-full px-4 pb-4 pt-2 ${panelOpen ? 'max-w-none' : 'max-w-3xl'}`}>
               <ProblemComposer
                 onSubmit={(p) => handleSend(p, true)}

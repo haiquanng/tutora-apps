@@ -1,31 +1,34 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getHistory, removeHistoryItem } from '../services/history.service';
+import { queryKeys } from '../lib/queryClient';
 import type { HistoryItem } from '../types/solve';
 
 export const useHistory = () => {
-  const [items, setItems] = useState<HistoryItem[]>([]);
-  const [isLoading, setLoading] = useState(true);
+  const qc = useQueryClient();
 
-  const reload = useCallback(() => {
-    getHistory()
-      .then(setItems)
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data, isLoading } = useQuery({
+    queryKey: queryKeys.history,
+    queryFn: getHistory,
+  });
 
-  useEffect(reload, [reload]);
+  const reload = useCallback(() => qc.invalidateQueries({ queryKey: queryKeys.history }), [qc]);
 
-  const remove = useCallback(
-    async (id: string) => {
-      setItems((prev) => prev.filter((i) => i.id !== id));
-      try {
-        await removeHistoryItem(id);
-      } catch {
-        reload();
-      }
+  const removeMut = useMutation({
+    mutationFn: removeHistoryItem,
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: queryKeys.history });
+      const prev = qc.getQueryData<HistoryItem[]>(queryKeys.history);
+      qc.setQueryData<HistoryItem[]>(queryKeys.history, (old) => (old ?? []).filter((i) => i.id !== id));
+      return { prev };
     },
-    [reload],
-  );
+    onError: (_e, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(queryKeys.history, ctx.prev);
+    },
+    onSettled: () => reload(),
+  });
 
-  return { items, isLoading, reload, remove };
+  const remove = useCallback((id: string) => removeMut.mutate(id), [removeMut]);
+
+  return { items: data ?? [], isLoading, reload, remove };
 };

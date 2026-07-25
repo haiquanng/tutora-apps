@@ -3,16 +3,15 @@ import { ChevronRight, Clock, House, LogOut, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { WEB_URL } from '../../services/api.service';
-import type { QuotaView } from '../../services/quota.service';
 
 interface Props {
-  quota: QuotaView;
+  aiBalance: number | null;
 }
 
 const initialOf = (name?: string, email?: string) => (name || email || 'T').trim().charAt(0).toUpperCase();
 
 /** Avatar + dropdown tài khoản ở góc phải header (tham khảo Gauth). */
-export const AccountMenu = ({ quota }: Props) => {
+export const AccountMenu = ({ aiBalance }: Props) => {
   const { user, isLoading, login, logout } = useAuth();
   const [isOpen, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -51,8 +50,6 @@ export const AccountMenu = ({ quota }: Props) => {
     );
   }
 
-  const periodLabel = quota.period === 'week' ? 'Tuần này' : 'Tháng này';
-
   return (
     <div ref={rootRef} className="relative">
       <button
@@ -88,27 +85,25 @@ export const AccountMenu = ({ quota }: Props) => {
           <p className="px-1 pb-1.5 text-xs font-semibold uppercase tracking-wide text-navy/40">Hạn mức</p>
           <div className="rounded-xl bg-cream-light p-3">
             <div className="flex items-baseline justify-between text-sm">
-              <span className="text-navy/60">Lượt hỏi</span>
+              <span className="text-navy/60">Lượt hỏi còn lại</span>
               <span className="font-semibold text-navy">
-                {quota.remaining}
-                <span className="text-navy/40"> / {quota.limit}</span>
+                {aiBalance !== null ? aiBalance.toLocaleString('vi-VN') : '—'}
               </span>
             </div>
-            <div className="mt-1 flex items-baseline justify-between text-xs text-navy/40">
-              <span>{periodLabel}</span>
-              <span>{quota.activeClasses > 0 ? `${quota.activeClasses} lớp đang học` : 'Chưa có lớp'}</span>
-            </div>
+            <div className="mt-1 text-xs text-navy/40">Cộng vào tài khoản, dùng vĩnh viễn</div>
           </div>
 
-          {quota.activeClasses === 0 && (
-            <button
-              type="button"
-              className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-gold px-3 py-2 text-sm font-semibold text-navy transition hover:brightness-105"
-            >
-              <Zap className="size-4" />
-              Đăng ký lớp để có thêm lượt
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              navigate('/upgrade');
+            }}
+            className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-gold px-3 py-2 text-sm font-semibold text-navy transition hover:brightness-105"
+          >
+            <Zap className="size-4" />
+            Đăng ký thêm lượt
+          </button>
 
           <div className="my-2 border-t border-navy/10" />
 

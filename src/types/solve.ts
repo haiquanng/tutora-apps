@@ -8,10 +8,10 @@ export interface SolveRequest {
 }
 
 export interface SolveChunk {
-  id: string;
-  session_id: string;
-  delta: string;
-  done: boolean;
+  id?: string;
+  session_id?: string;
+  delta?: string;
+  done?: boolean;
   thinking?: string;
   steps?: SolutionStep[];
   steps_final?: SolutionStep[];
