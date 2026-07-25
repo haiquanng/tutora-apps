@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { streamSolve } from '../services/solve.service';
-import { consumeQuota, getQuota } from '../services/quota.service';
+import { streamSolve, OutOfCreditError } from '../services/solve.service';
 import { createSession } from '../services/history.service';
 import type { ChatTurn, HistoryItem, SubmitMode } from '../types/solve';
 
@@ -14,21 +13,19 @@ export interface SubmitPayload {
 interface Options {
   /** Gọi khi bắt đầu 1 phiên mới -> trang điều hướng sang /c/:id. */
   onSessionStart?: (chatId: string) => void;
+  onSolved?: () => void;
+  onOutOfCredit?: () => void;
 }
 
-export const useSolveSession = ({ onSessionStart }: Options = {}) => {
+export const useSolveSession = ({ onSessionStart, onSolved, onOutOfCredit }: Options = {}) => {
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [quota, setQuota] = useState(getQuota);
 
   const sessionIdRef = useRef<string>('');
   const abortRef = useRef<(() => void) | null>(null);
   const modeRef = useRef<SubmitMode>('text');
   const turnsRef = useRef<ChatTurn[]>([]);
-
-  // Huỷ stream đang chạy khi unmount để tránh setState trên component đã gỡ.
-  useEffect(() => () => abortRef.current?.(), []);
 
   useEffect(() => {
     turnsRef.current = turns;
@@ -47,10 +44,7 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
     async (payload: SubmitPayload, isNewSession: boolean) => {
       const ask = payload.text?.trim() || 'Giải giúp mình bài trong ảnh này.';
       if (isStreaming) return;
-      if (getQuota().isExhausted) {
-        setError('Bạn đã dùng hết lượt hỏi trong kỳ này.');
-        return;
-      }
+      // Không chặn ở FE bằng quota mock nữa — BE là nguồn sự thật, hết lượt trả 402.
 
       abortRef.current?.();
       setError(null);
@@ -105,17 +99,22 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
             );
             setTurns(next);
             setIsStreaming(false);
-            setQuota(consumeQuota());
+            onSolved?.(); // refetch balance + history (đã trừ 1 ở BE)
           },
           onError: (err) => {
-            setError(err.message);
             setIsStreaming(false);
             patchLastTurn({ isStreaming: false });
+            if (err instanceof OutOfCreditError) {
+              setError(err.message);
+              onOutOfCredit?.();
+            } else {
+              setError(err.message);
+            }
           },
         },
       );
     },
-    [isStreaming, onSessionStart, patchLastTurn],
+    [isStreaming, onSessionStart, onSolved, onOutOfCredit, patchLastTurn],
   );
 
   /** Bài mới — reset phiên. */
@@ -151,7 +150,6 @@ export const useSolveSession = ({ onSessionStart }: Options = {}) => {
     sessionId: sessionIdRef.current,
     isStreaming,
     error,
-    quota,
     submit,
     sendFollowUp,
     reset,

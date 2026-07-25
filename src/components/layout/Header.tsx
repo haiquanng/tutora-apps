@@ -1,13 +1,12 @@
 import { PanelLeft } from 'lucide-react';
 import { AccountMenu } from './AccountMenu';
-import type { QuotaView } from '../../services/quota.service';
 
 interface Props {
-  quota: QuotaView;
+  aiBalance: number | null;
   onToggleSidebar: () => void;
 }
 
-export const Header = ({ quota, onToggleSidebar }: Props) => (
+export const Header = ({ aiBalance, onToggleSidebar }: Props) => (
   <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between border-b border-navy/10 bg-white px-4">
     <div className="flex items-center gap-3">
       <span className="flex items-center gap-2">
@@ -25,6 +24,6 @@ export const Header = ({ quota, onToggleSidebar }: Props) => (
       </button>
     </div>
 
-    <AccountMenu quota={quota} />
+    <AccountMenu aiBalance={aiBalance} />
   </header>
 );
