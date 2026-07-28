@@ -1,16 +1,10 @@
-/** Nguồn URL DUY NHẤT cho cả app — sửa ở đây, không khai lại nơi khác. */
 export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166';
 export const WEB_URL = import.meta.env.VITE_WEB_URL || 'http://localhost:5173';
 
 const BASE = `${BACKEND_URL}/api`;
 
-/** Key localStorage dùng chung với Tutora-FE (web chính bàn giao phiên qua đây). */
 export const USER_LOCAL_STORAGE_KEY = 'TUTORA_user_data';
 
-/**
- * BE xác thực bằng Bearer (chưa bật cookie .tutora.vn) nên phải tự đính token.
- * Gửi kèm cả cookie để khi BE bật cookie thì không phải sửa lại.
- */
 export const getAccessToken = (): string | undefined => {
   try {
     const raw = localStorage.getItem(USER_LOCAL_STORAGE_KEY);
@@ -88,5 +82,6 @@ export const api = {
   get: <T>(path: string, opts?: RequestOptions) => request<T>('GET', path, opts),
   post: <T>(path: string, opts?: RequestOptions) => request<T>('POST', path, opts),
   put: <T>(path: string, opts?: RequestOptions) => request<T>('PUT', path, opts),
+  patch: <T>(path: string, opts?: RequestOptions) => request<T>('PATCH', path, opts),
   delete: <T>(path: string, opts?: RequestOptions) => request<T>('DELETE', path, opts),
 };
