@@ -8,6 +8,8 @@ export interface SubmitPayload {
   text?: string;
   imageDataUrl?: string;
   wantCanvas?: boolean;
+  grade?: string;
+  chapter?: string;
 }
 
 interface Options {
@@ -82,6 +84,8 @@ export const useSolveSession = ({ onSessionStart, onSolved, onOutOfCredit }: Opt
           text: payload.text,
           imageBase64: payload.imageDataUrl?.split(',')[1],
           responseFormat: payload.wantCanvas ? 'steps' : 'markdown',
+          grade: payload.grade,
+          chapter: payload.chapter,
         },
         {
           onDelta: (accumulated) => patchLastTurn({ answer: accumulated }),
@@ -90,11 +94,18 @@ export const useSolveSession = ({ onSessionStart, onSolved, onOutOfCredit }: Opt
             setTurns((prev) =>
               prev.map((t, i) => (i === prev.length - 1 ? { ...t, steps: [...t.steps, ...incoming] } : t)),
             ),
-          onDone: (final, _sessionId, finalSteps) => {
+          onDone: (final, _sessionId, finalSteps, messageId, classification) => {
             // finalSteps rỗng = câu hỏi thường -> giữ steps rỗng, UI render markdown.
             const next = turnsRef.current.map((t, i) =>
               i === turnsRef.current.length - 1
-                ? { ...t, answer: final, steps: finalSteps ?? [], isStreaming: false }
+                ? {
+                    ...t,
+                    answer: final,
+                    steps: finalSteps ?? [],
+                    isStreaming: false,
+                    messageId,
+                    classification,
+                  }
                 : t,
             );
             setTurns(next);

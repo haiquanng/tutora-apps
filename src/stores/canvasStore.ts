@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { SolutionStep } from '../types/solve';
+import type { SolutionStep, TopicClassification } from '../types/solve';
 
 /** Một VERSION của canvas — 1 bản trình bày lời giải tại một thời điểm. */
 export interface CanvasVersion {
@@ -9,6 +9,7 @@ export interface CanvasVersion {
   answerSummary: string;
   createdAt: number;
   noteSaved?: boolean;
+  classification?: TopicClassification;
 }
 
 interface CanvasState {

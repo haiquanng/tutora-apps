@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronRight, Clock, House, LogOut, Zap } from 'lucide-react';
+import { ChevronRight, Clock, House, LogOut, Sparkles, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useTutorSuggestionPreference } from '../../hooks/useTutorSuggestion';
 import { WEB_URL } from '../../services/api.service';
 
 interface Props {
@@ -16,6 +17,11 @@ export const AccountMenu = ({ aiBalance }: Props) => {
   const [isOpen, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const {
+    enabled: suggestionEnabled,
+    setEnabled: setSuggestionEnabled,
+    isPending: isPendingPreference,
+  } = useTutorSuggestionPreference();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -130,6 +136,21 @@ export const AccountMenu = ({ aiBalance }: Props) => {
             <span className="flex-1 text-left">Lịch sử hỏi bài</span>
             <ChevronRight className="size-4 text-navy/30" />
           </button>
+
+          {suggestionEnabled !== null && (
+            <label className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-navy/70 transition hover:bg-cream-light hover:text-navy">
+              <Sparkles className="size-4" />
+              <span className="flex-1 text-left">Gợi ý gia sư</span>
+              <input
+                type="checkbox"
+                checked={suggestionEnabled}
+                onChange={(e) => setSuggestionEnabled(e.target.checked)}
+                disabled={isPendingPreference}
+                className="peer sr-only"
+              />
+              <span className="relative h-5 w-9 shrink-0 rounded-full bg-navy/15 transition peer-checked:bg-gold peer-disabled:opacity-50 after:absolute after:left-0.5 after:top-0.5 after:size-4 after:rounded-full after:bg-white after:transition peer-checked:after:translate-x-4" />
+            </label>
+          )}
 
           <button
             type="button"

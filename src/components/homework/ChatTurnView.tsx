@@ -1,6 +1,8 @@
 import { Loader2, PanelRight } from 'lucide-react';
 import { Markdown } from './Markdown';
 import { ThinkingBlock } from './ThinkingBlock';
+import { VoteButtons } from '../ui/VoteButtons';
+import { MESSAGE_REASONS, voteMessage } from '../../services/feedback.service';
 import type { ChatTurn } from '../../types/solve';
 
 interface Props {
@@ -44,6 +46,16 @@ export const ChatTurnView = ({ turn, onOpenCanvas, isActiveInPanel }: Props) => 
             </span>
           </button>
         )}
+
+      {!turn.isStreaming && turn.answer && turn.messageId && (
+        <VoteButtons
+          reasons={MESSAGE_REASONS}
+          initialVote={turn.myVote}
+          onVote={(vote, reason, detail) => voteMessage(turn.messageId!, vote, reason, detail)}
+          modalTitle="Lời giải chưa ổn ở đâu?"
+          modalDescription="Cho mình biết để cải thiện chất lượng lời giải nhé."
+        />
+      )}
 
       {turn.isStreaming && (
         <p className="flex items-center gap-2 text-sm text-navy/50">

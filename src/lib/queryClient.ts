@@ -13,4 +13,5 @@ export const queryClient = new QueryClient({
 export const queryKeys = {
   aiCreditBalance: ['aiCredit', 'balance'] as const,
   history: ['history'] as const,
+  tutorSuggestion: (sessionId: string) => ['tutorSuggestion', sessionId] as const,
 };

@@ -9,6 +9,7 @@ import { InlineMath } from '../components/ui/InlineMath';
 import { ChatTurnView } from '../components/homework/ChatTurnView';
 import { CanvasPanel } from '../components/homework/CanvasPanel';
 import { ResizeHandle } from '../components/homework/ResizeHandle';
+import { TutorSuggestionBanner } from '../components/tutor/TutorSuggestionBanner';
 import { useSolveSession } from '../hooks/useSolveSession';
 import type { SubmitPayload } from '../hooks/useSolveSession';
 import { useAuth } from '../hooks/useAuth';
@@ -43,6 +44,7 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
   const onSessionStart = useCallback(
     (id: string) => {
       loadedRef.current = id;
+      setOpenedFromHistory(false);
       navigate(`/c/${id}`);
     },
     [navigate],
@@ -57,12 +59,15 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
   const { turns, isStreaming, loadFromHistory, reset, sessionId: turnsSessionId } = session;
 
   const canvas = useCanvasStore();
+  const pushVersion = canvas.pushVersion;
   const pushedRef = useRef<Set<string>>(new Set());
   const savingVersionsRef = useRef<Set<string>>(new Set());
   const openNextCanvasRef = useRef(false);
   const [draggingCanvas, setDraggingCanvas] = useState(false);
 
   const [isLoadingHistory, setLoadingHistory] = useState(() => Boolean(chatId));
+  // Phiên mở lại từ lịch sử (khác phiên vừa tạo tại chỗ) -> modal gợi ý được tự bật.
+  const [openedFromHistory, setOpenedFromHistory] = useState(() => Boolean(chatId));
 
   useEffect(() => {
     if (!chatId) return;
@@ -80,20 +85,21 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
       pushedRef.current.add(t.id);
       const autoOpen = openNextCanvasRef.current;
       openNextCanvasRef.current = false;
-      canvas.pushVersion(
+      pushVersion(
         chatId,
         {
           label: t.question,
           steps: t.steps,
           answerSummary: t.answer,
           noteSaved: t.noteSaved,
+          classification: t.classification,
         },
         autoOpen,
       );
     }
-  }, [turns, chatId, canvas, isLoadingHistory, turnsSessionId]);
+  }, [turns, chatId, pushVersion, isLoadingHistory, turnsSessionId]);
 
-  const closeCanvas = useCallback(() => canvas.close(), [canvas]);
+  const closeCanvas = useCallback(() => canvas.close(), [canvas.close]);
 
   // Lưu version canvas đang xem thành Note (question_notes).
   const saveNote = useCallback(async () => {
@@ -104,12 +110,16 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
     savingVersionsRef.current.add(key);
     setNoteSaveState((s) => ({ ...s, [key]: 'saving' }));
     try {
+      const grade = Number(v.classification?.grade);
       await createNote({
         title: v.label.slice(0, 255),
         sourceSessionId: chatId || undefined,
         problemText: v.label,
         solutionSteps: v.steps,
         answerSummary: v.answerSummary,
+        chapter: v.classification?.chapter ?? undefined,
+        gradeLevel: Number.isFinite(grade) && grade > 0 ? grade : undefined,
+        subject: v.classification?.chapter ? 'Toán Học' : undefined,
       });
       setNoteSaveState((s) => ({ ...s, [key]: 'saved' }));
       onNotesChange?.();
@@ -120,11 +130,12 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
   }, [canvas, chatId, onNotesChange]);
 
   // Đổi phiên (mở note khác / bài mới) -> reset canvas để không dính version bài cũ.
+  const canvasReset = canvas.reset;
   useEffect(() => {
-    canvas.reset();
+    canvasReset();
     pushedRef.current = new Set();
     savingVersionsRef.current = new Set();
-  }, [chatId, canvas]);
+  }, [chatId, canvasReset]);
 
   const handleSend = useCallback(
     (payload: SubmitPayload, isFollowUp: boolean) => {
@@ -143,6 +154,7 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
   useEffect(() => {
     if (!chatId) {
       setLoadingHistory(false);
+      setOpenedFromHistory(false);
       if (loadedRef.current !== null) {
         loadedRef.current = null;
         reset();
@@ -157,6 +169,7 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
 
     loadedRef.current = chatId;
     setLoadingHistory(true);
+    setOpenedFromHistory(true);
     getHistoryItem(chatId)
       .then((item) => {
         if (item) loadFromHistory(item);
@@ -280,6 +293,12 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
                   />
                 ))}
               </div>
+
+              <TutorSuggestionBanner
+                sessionId={chatId}
+                enabled={!isStreaming}
+                autoOpenable={openedFromHistory && !isLoadingHistory}
+              />
 
               {session.error && (
                 <p className="mt-4 flex items-center gap-2 rounded-xl bg-burgundy/10 px-4 py-3 text-sm text-burgundy">
