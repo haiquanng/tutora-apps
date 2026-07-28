@@ -11,6 +11,7 @@ export interface QuestionNote {
   solutionSteps?: SolutionStep[] | null;
   answerSummary?: string | null;
   personalNote?: string | null;
+  stepNotes?: Record<string, string> | null;
   subject?: string | null;
   gradeLevel?: number | null;
   chapter?: string | null;
@@ -39,7 +40,16 @@ export const getNote = (noteId: string): Promise<QuestionNote> =>
 export const createNote = (payload: CreateNotePayload): Promise<QuestionNote> =>
   api.post<QuestionNote>('/question-notes', { body: payload });
 
-export const updateNote = (noteId: string, patch: { title?: string; personalNote?: string }): Promise<QuestionNote> =>
+export interface UpdateNotePayload {
+  title?: string;
+  personalNote?: string;
+  stepNotes?: Record<string, string>;
+  subject?: string;
+  gradeLevel?: number;
+  chapter?: string;
+}
+
+export const updateNote = (noteId: string, patch: UpdateNotePayload): Promise<QuestionNote> =>
   api.put<QuestionNote>(`/question-notes/${encodeURIComponent(noteId)}`, { body: patch });
 
 export const deleteNote = (noteId: string): Promise<void> =>
