@@ -2,9 +2,16 @@ export interface SolveRequest {
   text?: string;
   imageBase64?: string;
   imageUrl?: string;
-  grade?: number | null;
+  grade?: string | null;
   chapter?: string | null;
   responseFormat?: 'markdown' | 'steps';
+}
+
+export interface TopicClassification {
+  grade?: string | null;
+  chapter?: string | null;
+  topic?: string | null;
+  confidence?: number;
 }
 
 export interface SolveChunk {
@@ -15,6 +22,7 @@ export interface SolveChunk {
   thinking?: string;
   steps?: SolutionStep[];
   steps_final?: SolutionStep[];
+  classification?: TopicClassification;
 }
 
 /** 1 bước lời giải hiển thị trên canvas (backend tách sẵn, xem step_segmenter.py). */
@@ -32,6 +40,9 @@ export type SubmitMode = 'text' | 'image' | 'camera';
 
 export interface ChatTurn {
   id: string;
+  messageId?: string;
+  classification?: TopicClassification;
+  myVote?: 1 | -1;
   question: string;
   image?: string;
   answer: string;

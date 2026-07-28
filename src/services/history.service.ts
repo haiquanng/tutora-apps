@@ -20,6 +20,7 @@ interface MessageDto {
   imageUrl: string | null;
   metadata: { steps?: SolutionStep[]; thinking?: string } | null;
   noteSaved?: boolean;
+  myVote?: number | null;
   createdAt: string;
 }
 
@@ -48,6 +49,8 @@ const toTurns = (messages: MessageDto[]): ChatTurn[] => {
       last.steps = m.metadata?.steps ?? [];
       last.thinking = m.metadata?.thinking ?? undefined;
       last.noteSaved = m.noteSaved ?? false;
+      last.messageId = m.messageId;
+      last.myVote = m.myVote === 1 || m.myVote === -1 ? m.myVote : undefined;
     }
   }
   return turns;

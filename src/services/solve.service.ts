@@ -1,4 +1,4 @@
-import type { SolutionStep, SolveChunk, SolveRequest } from '../types/solve';
+import type { SolutionStep, SolveChunk, SolveRequest, TopicClassification } from '../types/solve';
 import { authHeader, BACKEND_URL } from './api.service';
 
 export interface StreamHandlers {
@@ -6,7 +6,13 @@ export interface StreamHandlers {
   onThinking?: (accumulated: string, delta: string) => void;
   /** Backend vừa chốt xong một số bước -> nối vào canvas. */
   onSteps?: (steps: SolutionStep[]) => void;
-  onDone: (final: string, sessionId: string, steps?: SolutionStep[]) => void;
+  onDone: (
+    final: string,
+    sessionId: string,
+    steps?: SolutionStep[],
+    messageId?: string,
+    classification?: TopicClassification,
+  ) => void;
   onError: (error: Error) => void;
 }
 
@@ -46,6 +52,7 @@ export const streamSolve = (sessionId: string, body: SolveRequest, handlers: Str
     let buffer = '';
     let accumulated = '';
     let thinking = '';
+    let messageId: string | undefined;
 
     for (;;) {
       const { done, value } = await reader.read();
@@ -68,6 +75,8 @@ export const streamSolve = (sessionId: string, body: SolveRequest, handlers: Str
           continue; // event lỗi -> bỏ qua, không làm gãy cả stream
         }
 
+        if (chunk.id) messageId = chunk.id;
+
         if (chunk.thinking) {
           thinking += chunk.thinking;
           handlers.onThinking?.(thinking, chunk.thinking);
@@ -80,14 +89,14 @@ export const streamSolve = (sessionId: string, body: SolveRequest, handlers: Str
           handlers.onSteps?.(chunk.steps);
         }
         if (chunk.done) {
-          handlers.onDone(accumulated, sessionId, chunk.steps_final);
+          handlers.onDone(accumulated, sessionId, chunk.steps_final, messageId, chunk.classification);
           return;
         }
       }
     }
 
     // Stream đóng mà chưa có event done -> vẫn chốt bằng nội dung đã nhận.
-    handlers.onDone(accumulated, sessionId);
+    handlers.onDone(accumulated, sessionId, undefined, messageId);
   };
 
   run().catch((error: unknown) => {
