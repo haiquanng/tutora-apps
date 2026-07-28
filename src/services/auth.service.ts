@@ -11,10 +11,6 @@ export interface AuthUser {
 /** User kèm token — chỉ có ở nhánh đọc localStorage (dev local, cùng origin). */
 type LocalUser = AuthUser & { accessToken?: string; refreshToken?: string };
 
-/**
- * Dev local (cùng origin với Tutora-FE) thì vẫn lấy được user + token từ localStorage.
- * Trên production khác origin, hàm này luôn trả null -> phải trông vào cookie.
- */
 const readLocalFallback = (): LocalUser | null => {
   try {
     const raw = localStorage.getItem(USER_LOCAL_STORAGE_KEY);
@@ -28,10 +24,6 @@ const readLocalFallback = (): LocalUser | null => {
 
 /**
  * Web chính bàn giao phiên qua fragment (#accessToken=...&refreshToken=...) vì
- * khác origin không dùng chung localStorage được. Đọc xong LƯU rồi XOÁ fragment
- * khỏi thanh địa chỉ ngay để token không nằm lại trong URL / lịch sử trình duyệt.
- *
- * Gọi trước mọi thứ khác lúc khởi động app.
  */
 export const consumeSessionFromUrl = (): boolean => {
   if (!window.location.hash) return false;
@@ -52,12 +44,7 @@ export const consumeSessionFromUrl = (): boolean => {
 };
 
 /**
- * Hỏi BE user hiện tại.
- *
- * Dùng /api/users/profile (endpoint CÓ THẬT) — không phải /auth/me, BE chưa có.
- * Gửi kèm cả cookie (credentials) lẫn Bearer:
- *  - Bearer: cách BE đang hoạt động hôm nay (JwtBearer đọc header Authorization).
- *  - credentials: để khi BE bật cookie .tutora.vn thì tự chạy, không phải sửa FE.
+ * Dùng /api/users/profile (endpoint CÓ THẬT)
  */
 export const fetchCurrentUser = async (): Promise<AuthUser | null> => {
   const local = readLocalFallback();
@@ -75,7 +62,16 @@ export const fetchCurrentUser = async (): Promise<AuthUser | null> => {
 
     const body = await response.json();
     // BE .NET bọc payload trong { content: ... } ở hầu hết endpoint.
-    return (body?.content ?? body) as AuthUser;
+    const raw = (body?.content ?? body) as Record<string, unknown> | null;
+    if (!raw) return local;
+
+    return {
+      id: (raw.userid ?? raw.userId) as string | undefined,
+      fullName: (raw.fullname ?? raw.fullName) as string | undefined,
+      email: raw.email as string | undefined,
+      avatarUrl: (raw.avatarurl ?? raw.avatarUrl) as string | undefined,
+      role: raw.role as string | undefined,
+    };
   } catch {
     return local;
   }
@@ -120,8 +116,6 @@ export const takePendingPrompt = (): PendingPrompt | null => {
 export const logout = async () => {
   const local = readLocalFallback();
   try {
-    // Endpoint thật là /api/tokens/revoke (KHÔNG phải /auth/logout) và cần
-    // refreshToken trong body + Authorization.
     await fetch(`${BACKEND_URL}/api/tokens/revoke`, {
       method: 'POST',
       credentials: 'include',
