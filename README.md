@@ -11,7 +11,7 @@ npm run dev          # http://localhost:5180
 ```
 
 Cần `tutora-ai` chạy ở `http://localhost:8000` (endpoint `POST /api/v1/solve`).
-Dev qua proxy Vite nên không vướng CORS khi stream SSE.
+Dev đi qua proxy Vite nên không vướng CORS khi stream SSE.
 
 ## Scripts
 
