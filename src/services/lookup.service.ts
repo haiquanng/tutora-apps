@@ -93,3 +93,20 @@ export const groupByGrade = (chapters: Chapter[]): { grade: number; chapters: Ch
   });
   return [...groups].sort((a, b) => a[0] - b[0]).map(([grade, items]) => ({ grade, chapters: items }));
 };
+
+export interface GradeLevel {
+  /** Khoá nội bộ (57..60) — thứ BE nhận. */
+  id: number;
+  name: string;
+  /** Số lớp hiển thị (9..12). */
+  order: number;
+}
+
+/** Danh sách khối lớp để đổi số lớp <-> gradeLevelId. */
+export const fetchGradeLevels = async (): Promise<GradeLevel[]> => {
+  const list = await fetchList<GradeLevelDto>('/grade-levels');
+  return list
+    .filter((g) => g.isActive)
+    .map((g) => ({ id: g.gradeLevelId, name: g.gradeName, order: g.levelOrder }))
+    .sort((a, b) => a.order - b.order);
+};
