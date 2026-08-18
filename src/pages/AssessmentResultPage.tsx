@@ -1,0 +1,264 @@
+import { useCallback, useEffect, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Loader2, Sparkles } from 'lucide-react';
+import { AnalysisPanel } from '../components/assessment/AnalysisPanel';
+import { AnswerReview } from '../components/assessment/AnswerReview';
+import { RoadmapMindmap } from '../components/assessment/RoadmapMindmap';
+import { ChapterPanel } from '../components/assessment/ChapterPanel';
+import { RoadmapSteps } from '../components/assessment/RoadmapSteps';
+import {
+  fetchAttemptResult,
+  parseAnalysisResult,
+  runAnalysis,
+  type Analysis,
+  type AttemptResult,
+  type ChapterMastery,
+} from '../services/assessment.service';
+
+const formatDuration = (seconds: number | null) => {
+  if (!seconds) return null;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return m > 0 ? `${m} phút ${s}s` : `${s}s`;
+};
+
+const Stat = ({ label, value, hint }: { label: string; value: string; hint?: string }) => (
+  <div className="rounded-xl border border-navy/10 bg-white px-4 py-3">
+    <p className="text-xs text-navy/45">{label}</p>
+    <p className="mt-0.5 font-serif text-xl text-navy">
+      {value}
+      {hint && <span className="ml-1.5 text-sm text-navy/45">{hint}</span>}
+    </p>
+  </div>
+);
+
+/**
+ * Kết quả 1 lượt làm bài — route RIÊNG /assessment/:attemptId/result.
+ *
+ * Tách khỏi AssessmentPage để reload không quay về pha khảo sát: trang tự tải lại
+ * kết quả từ attemptId trên URL, và chỉ chạy phân tích khi bài chưa được phân tích.
+ */
+export const AssessmentResultPage = () => {
+  const { attemptId = '' } = useParams();
+  const navigate = useNavigate();
+  const { state } = useLocation();
+
+  // Mở từ lịch sử thì quay về lịch sử, còn lại giữ mặc định là lộ trình.
+  const cameFromHistory = (state as { from?: string } | null)?.from === 'history';
+  const backTo = cameFromHistory ? '/assessment/history' : '/roadmap';
+  const backLabel = cameFromHistory ? 'Lịch sử làm bài' : 'Lộ trình học tập';
+
+  const [result, setResult] = useState<AttemptResult | null>(null);
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [isLoading, setLoading] = useState(true);
+  const [isAnalyzing, setAnalyzing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [picked, setPicked] = useState<ChapterMastery | null>(null);
+
+  const analyze = useCallback(async () => {
+    if (!attemptId) return;
+    setAnalyzing(true);
+    setAnalysisError(null);
+    try {
+      const data = await runAnalysis(attemptId);
+      setAnalysis(data);
+      const fresh = await fetchAttemptResult(attemptId).catch(() => null);
+      if (fresh) setResult(fresh);
+    } catch (e) {
+      setAnalysisError(e instanceof Error ? e.message : 'Không phân tích được bài làm. Bạn thử lại nhé.');
+    } finally {
+      setAnalyzing(false);
+    }
+  }, [attemptId]);
+
+  useEffect(() => {
+    if (!attemptId) return;
+    let cancelled = false;
+
+    setLoading(true);
+    setLoadError(null);
+    fetchAttemptResult(attemptId)
+      .then((data) => {
+        if (cancelled) return;
+        setResult(data);
+
+        // Đã phân tích rồi -> đọc lại kết quả cũ, KHÔNG gọi AI lần nữa (tốn quota,
+        // và reload trang không được phép ghi đè profile).
+        const existing = parseAnalysisResult(data.analysisResult);
+        if (existing) {
+          setAnalysis(existing);
+          return;
+        }
+        if (data.analysisStatus !== 'processing') void analyze();
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setLoadError(e instanceof Error ? e.message : 'Không tải được kết quả.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // analyze phụ thuộc attemptId nên không đưa vào deps -> tránh chạy lại 2 lần.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attemptId]);
+
+  const onPickChapter = useCallback(
+    (chapter: { name: string; slug: string | null }) => {
+      if (!chapter.slug) {
+        navigate('/resources');
+        return;
+      }
+      navigate(`/roadmap/chapter/${encodeURIComponent(chapter.slug)}?name=${encodeURIComponent(chapter.name)}`);
+    },
+    [navigate],
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-cream">
+        <Loader2 className="size-6 animate-spin text-navy/40" />
+      </div>
+    );
+  }
+
+  if (loadError || !result) {
+    return (
+      <div className="mx-auto max-w-xl px-6 py-24 text-center">
+        <p className="font-serif text-2xl text-navy">Không tìm thấy kết quả</p>
+        <p className="mt-3 text-[15px] text-navy/60">
+          {loadError ?? 'Bài làm này không tồn tại hoặc không thuộc về bạn.'}
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate('/assessment')}
+          className="mt-6 cursor-pointer rounded-xl border border-navy/15 px-5 py-2.5 text-sm font-semibold text-navy transition hover:bg-cream-light"
+        >
+          Làm bài đánh giá mới
+        </button>
+      </div>
+    );
+  }
+
+  const duration = formatDuration(result.durationSeconds);
+
+  return (
+    <div className="min-h-screen bg-cream">
+      <div className="mx-auto max-w-[1600px] px-6 py-10 2xl:px-10">
+        <button
+          type="button"
+          onClick={() => navigate(backTo)}
+          className="flex cursor-pointer items-center gap-1.5 text-sm text-navy/55 transition hover:text-navy"
+        >
+          <ArrowLeft className="size-4" />
+          {backLabel}
+        </button>
+
+        <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-navy/40">Kết quả đánh giá</p>
+        <h1 className="mt-1.5 font-serif text-3xl text-navy">{result.title}</h1>
+        <p className="mt-1.5 text-[15px] text-navy/55">
+          {[result.subjectName, result.gradeName].filter(Boolean).join(' · ')}
+        </p>
+
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:max-w-2xl">
+          {/* showResult=false -> ẩn ĐIỂM, vẫn cho xem đáp án + phân tích. */}
+          {result.showResult && (
+            <Stat
+              label="Điểm"
+              value={`${result.earnedPoints}/${result.maxPoints}`}
+              hint={result.scorePercent !== null ? `(${result.scorePercent}%)` : undefined}
+            />
+          )}
+          <Stat label="Số câu đúng" value={`${result.correctCount}/${result.totalQuestions}`} />
+          {duration && <Stat label="Thời gian làm" value={duration} />}
+        </div>
+
+        {/* Mindmap bên trái, AI nhận xét bên phải. Lộ trình + bài làm nằm dưới cả 2. */}
+        <div className="mt-8 grid items-start gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+          {analysis && analysis.chapter_mastery.length > 0 && (
+            <section>
+              <h2 className="mb-4 font-serif text-xl text-navy">Bản đồ kiến thức</h2>
+              <RoadmapMindmap
+                subjectName={result.subjectName ?? 'Môn học'}
+                gradeName={result.gradeName}
+                analysis={analysis}
+                selected={picked}
+                onSelect={setPicked}
+              />
+            </section>
+          )}
+
+          <section className="xl:sticky xl:top-6">
+            <h2 className="mb-4 font-serif text-xl text-navy">AI nhận xét</h2>
+
+            {isAnalyzing && (
+              <div className="flex items-center gap-3 rounded-2xl border border-navy/10 bg-white px-5 py-6 text-[15px] text-navy/60">
+                <Loader2 className="size-4 animate-spin" />
+                AI đang đọc bài làm và xây lộ trình cho bạn…
+              </div>
+            )}
+
+            {!isAnalyzing && analysisError && (
+              <div className="rounded-2xl border border-burgundy/20 bg-burgundy/5 px-5 py-5">
+                <p className="text-[15px] text-burgundy">{analysisError}</p>
+                <p className="mt-1 text-[14px] text-navy/55">Bài làm và điểm của bạn vẫn được giữ nguyên.</p>
+                <button
+                  type="button"
+                  onClick={() => void analyze()}
+                  className="mt-3 cursor-pointer rounded-xl bg-navy px-4 py-2 text-sm font-semibold text-cream transition hover:brightness-110"
+                >
+                  Thử phân tích lại
+                </button>
+              </div>
+            )}
+
+            {!isAnalyzing && !analysisError && analysis && <AnalysisPanel analysis={analysis} />}
+          </section>
+        </div>
+
+        {/* Panel chương: overlay phủ mép phải, nằm ngoài mọi grid. */}
+        <ChapterPanel chapter={picked} onClose={() => setPicked(null)} onPickChapter={onPickChapter} />
+
+        {analysis && analysis.recommended_path.length > 0 && (
+          <section className="mt-10">
+            <h2 className="mb-4 font-serif text-xl text-navy">Lộ trình gợi ý</h2>
+            <RoadmapSteps steps={analysis.recommended_path} onPickChapter={onPickChapter} />
+          </section>
+        )}
+
+        <section className="mt-10">
+          <h2 className="mb-4 font-serif text-xl text-navy">Xem lại bài làm</h2>
+          <AnswerReview answers={result.answers} />
+        </section>
+
+        <div className="mt-8 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => navigate('/roadmap')}
+            className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-gold px-5 py-2.5 text-sm font-semibold text-navy transition hover:brightness-105"
+          >
+            <Sparkles className="size-4" />
+            Xem lộ trình học tập
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/assessment/history')}
+            className="cursor-pointer rounded-xl border border-navy/15 px-5 py-2.5 text-sm font-semibold text-navy transition hover:bg-cream-light"
+          >
+            Lịch sử làm bài
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="cursor-pointer rounded-xl border border-navy/15 px-5 py-2.5 text-sm font-semibold text-navy transition hover:bg-cream-light"
+          >
+            Về giải bài tập
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
