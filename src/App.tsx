@@ -12,6 +12,11 @@ import { NotePage } from './pages/NotePage';
 import { NotesListPage } from './pages/NotesListPage';
 import { AppPage } from './pages/AppPage';
 import { UpgradePage } from './pages/UpgradePage';
+import { AssessmentPage } from './pages/AssessmentPage';
+import { AssessmentResultPage } from './pages/AssessmentResultPage';
+import { AssessmentHistoryPage } from './pages/AssessmentHistoryPage';
+import { RoadmapPage } from './pages/RoadmapPage';
+import { RoadmapChapterPage } from './pages/RoadmapChapterPage';
 import { AuthProvider } from './hooks/AuthProvider';
 import { useHistory } from './hooks/useHistory';
 import { useAiBalance } from './hooks/useAiBalance';
@@ -60,6 +65,10 @@ const App = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/upgrade" element={<UpgradePage />} />
+          {/* Bài đánh giá: layout RIÊNG, không header/sidebar — vào là tập trung làm bài. */}
+          <Route path="/assessment" element={<AssessmentPage />} />
+          {/* Kết quả có route riêng -> reload không bay về pha khảo sát. */}
+          <Route path="/assessment/:attemptId/result" element={<AssessmentResultPage />} />
 
           <Route
             path="*"
@@ -88,6 +97,7 @@ const App = () => {
                       <Route path="/notes" element={<NotesListPage />} />
                       <Route path="/notes/:noteId" element={<NotePage />} />
                       <Route path="/history" element={<HistoryPage />} />
+                      <Route path="/assessment/history" element={<AssessmentHistoryPage />} />
                       <Route path="/resources" element={<ResourcesPage />} />
                       <Route path="/resources/:subjectSlug" element={<StudyResourcePage />} />
                       <Route path="/resources/:subjectSlug/:chapterSlug" element={<StudyResourcePage />} />
@@ -96,6 +106,8 @@ const App = () => {
                         path="/resources/:subjectSlug/:chapterSlug/q/:questionId"
                         element={<QuestionDetailPage />}
                       />
+                      <Route path="/roadmap" element={<RoadmapPage />} />
+                      <Route path="/roadmap/chapter/:chapterSlug" element={<RoadmapChapterPage />} />
                       <Route path="/app" element={<AppPage />} />
                     </Routes>
                   </main>

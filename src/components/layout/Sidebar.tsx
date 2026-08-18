@@ -1,7 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { BookMarked, Bookmark, ChevronRight, House, Plus, Smartphone, Sparkles } from 'lucide-react';
+import {
+  BookMarked,
+  Bookmark,
+  ChevronRight,
+  ClipboardCheck,
+  History,
+  House,
+  Map,
+  Plus,
+  Smartphone,
+  Sparkles,
+} from 'lucide-react';
 import { UsagePanel } from './UsagePanel';
 import { ResourcesFlyout } from './ResourcesFlyout';
 import { HistoryList } from './HistoryList';
@@ -199,6 +210,42 @@ export const Sidebar = ({ aiBalance, isOpen, onClose, history, historyLoading, o
                     <ResourcesFlyout onNavigate={closeFlyout} />
                   </div>
                 ))}
+            </li>
+
+            <li>
+              <NavLink
+                to="/assessment"
+                onClick={closeFlyout}
+                className={linkClass(collapsed)}
+                title={collapsed ? 'Bài đánh giá' : undefined}
+              >
+                <ClipboardCheck className="size-[18px] shrink-0" />
+                {!collapsed && 'Bài đánh giá'}
+              </NavLink>
+            </li>
+
+            <li>
+              <NavLink
+                to="/assessment/history"
+                onClick={closeFlyout}
+                className={linkClass(collapsed)}
+                title={collapsed ? 'Lịch sử làm bài' : undefined}
+              >
+                <History className="size-[18px] shrink-0" />
+                {!collapsed && 'Lịch sử làm bài'}
+              </NavLink>
+            </li>
+
+            <li>
+              <NavLink
+                to="/roadmap"
+                onClick={closeFlyout}
+                className={linkClass(collapsed)}
+                title={collapsed ? 'Lộ trình học tập' : undefined}
+              >
+                <Map className="size-[18px] shrink-0" />
+                {!collapsed && 'Lộ trình học tập'}
+              </NavLink>
             </li>
 
             <li>

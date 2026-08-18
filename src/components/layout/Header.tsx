@@ -1,4 +1,5 @@
-import { PanelLeft } from 'lucide-react';
+import { ClipboardCheck, PanelLeft } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 import { AccountMenu } from './AccountMenu';
 
 interface Props {
@@ -24,6 +25,24 @@ export const Header = ({ aiBalance, onToggleSidebar }: Props) => (
       </button>
     </div>
 
-    <AccountMenu aiBalance={aiBalance} />
+    <div className="flex items-center gap-2">
+      {/* Lối vào nhanh phòng thi — /assessment là layout riêng, không sidebar. */}
+      <NavLink
+        to="/assessment"
+        className={({ isActive }) =>
+          `flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+            isActive
+              ? 'border-gold bg-cream-light text-navy'
+              : 'border-navy/12 text-navy hover:border-gold hover:bg-cream-light'
+          }`
+        }
+      >
+        <ClipboardCheck className="size-4 shrink-0" />
+        {/* Mobile chỉ để icon cho đỡ chật header. */}
+        <span className="hidden sm:inline">Đánh giá năng lực</span>
+      </NavLink>
+
+      <AccountMenu aiBalance={aiBalance} />
+    </div>
   </header>
 );
