@@ -15,7 +15,7 @@ export const QuestionListItem = ({ question, to }: Props) => {
   return (
     <Link to={to} className="group flex items-start gap-4 py-4 transition">
       {/* Đề bài — clamp 3 dòng để danh sách gọn, chi tiết xem ở trang trong. */}
-      <div className="min-w-0 flex-1 line-clamp-3 [&_*]:!my-0 [&>div]:!text-[13px]">
+      <div className="min-w-0 flex-1 overflow-x-auto line-clamp-3 [&_*]:!my-0 [&>div]:!text-[14px]">
         <Markdown>{question.content}</Markdown>
       </div>
 
