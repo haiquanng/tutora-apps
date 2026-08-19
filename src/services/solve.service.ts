@@ -44,7 +44,12 @@ export const streamSolve = (sessionId: string, body: SolveRequest, handlers: Str
       throw new OutOfCreditError();
     }
     if (!response.ok || !response.body) {
-      throw new Error(`Solve failed: ${response.status}`);
+      // Message này hiện thẳng cho học sinh -> không lộ mã HTTP.
+      throw new Error(
+        response.status === 401 || response.status === 403
+          ? 'Bạn cần đăng nhập để dùng tính năng này.'
+          : 'Không gửi được bài. Bạn kiểm tra mạng rồi thử lại nhé.',
+      );
     }
 
     const reader = response.body.getReader();
