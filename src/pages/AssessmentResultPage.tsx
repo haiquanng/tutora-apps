@@ -15,6 +15,9 @@ import {
   type ChapterMastery,
 } from '../services/assessment.service';
 
+/** Bài đã nộp mới có điểm/đáp án để xem lại. */
+const isSubmitted = (r: AttemptResult) => r.status === 'submitted' || Boolean(r.submittedAt);
+
 const formatDuration = (seconds: number | null) => {
   if (!seconds) return null;
   const m = Math.floor(seconds / 60);
@@ -90,6 +93,9 @@ export const AssessmentResultPage = () => {
           setAnalysis(existing);
           return;
         }
+        // Bài chưa nộp (tự thoát giữa chừng) thì CHƯA có câu trả lời nào để chấm —
+        // gọi phân tích chỉ tổ 404. Trang sẽ hiện lối quay lại làm tiếp.
+        if (!isSubmitted(data)) return;
         if (data.analysisStatus !== 'processing') void analyze();
       })
       .catch((e: unknown) => {
@@ -144,6 +150,53 @@ export const AssessmentResultPage = () => {
   }
 
   const duration = formatDuration(result.durationSeconds);
+
+  // Bài bỏ dở: chưa nộp nên chưa có câu trả lời nào được chấm. Hiện 0/0 + lỗi phân tích
+  // là sai sự thật -> nói thẳng trạng thái và mời làm lại.
+  if (!isSubmitted(result)) {
+    return (
+      <div className="min-h-screen bg-cream">
+        <div className="mx-auto max-w-2xl px-6 py-10">
+          <button
+            type="button"
+            onClick={() => navigate(backTo)}
+            className="flex cursor-pointer items-center gap-1.5 text-sm text-navy/55 transition hover:text-navy"
+          >
+            <ArrowLeft className="size-4" />
+            {backLabel}
+          </button>
+
+          <div className="mt-8 rounded-2xl border border-navy/10 bg-white p-8 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wide text-navy/40">Bài chưa hoàn thành</p>
+            <h1 className="mt-2 font-serif text-2xl text-navy">{result.title}</h1>
+            <p className="mt-1.5 text-[15px] text-navy/55">
+              {[result.subjectName, result.gradeName].filter(Boolean).join(' · ')}
+            </p>
+            <p className="mt-5 text-[15px] leading-relaxed text-navy/70">
+              Bạn đã thoát ra khi đang làm bài này nên chưa có kết quả. Làm lại từ đầu để nhận điểm và phân tích nhé.
+            </p>
+
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate('/assessment')}
+                className="cursor-pointer rounded-xl bg-navy px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-navy/90"
+              >
+                Làm lại bài đánh giá
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/assessment/history')}
+                className="cursor-pointer rounded-xl border border-navy/15 px-5 py-2.5 text-sm font-semibold text-navy transition hover:bg-cream-light"
+              >
+                Lịch sử làm bài
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-cream">

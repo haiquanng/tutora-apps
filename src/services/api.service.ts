@@ -58,6 +58,19 @@ const buildUrl = (path: string, query?: RequestOptions['query']): string => {
   return s ? `${url}?${s}` : url;
 };
 
+/**
+ * Thông báo lỗi cho người dùng cuối — TUYỆT ĐỐI không in mã HTTP ra màn hình.
+ * Học sinh không hiểu 401/404 nghĩa là gì; nói thẳng cần làm gì tiếp.
+ */
+const defaultErrorMessage = (status: number): string => {
+  if (status === 401 || status === 403) return 'Bạn cần đăng nhập để xem nội dung này.';
+  if (status === 404) return 'Không tìm thấy nội dung này.';
+  if (status === 408 || status === 504) return 'Mạng chậm nên yêu cầu bị quá hạn. Bạn thử lại nhé.';
+  if (status === 429) return 'Bạn thao tác hơi nhanh. Chờ một chút rồi thử lại nhé.';
+  if (status >= 500) return 'Hệ thống đang bận. Bạn thử lại sau ít phút nhé.';
+  return 'Có lỗi xảy ra. Bạn thử lại nhé.';
+};
+
 const request = async <T>(method: string, path: string, opts: RequestOptions = {}): Promise<T> => {
   const headers: Record<string, string> = { Accept: 'application/json', ...authHeader() };
   const init: RequestInit = { method, credentials: 'include', headers, signal: opts.signal };
@@ -70,7 +83,7 @@ const request = async <T>(method: string, path: string, opts: RequestOptions = {
   const res = await fetch(buildUrl(path, opts.query), init);
 
   if (!res.ok) {
-    throw new ApiError(res.status, opts.errorMessages?.[res.status] ?? `Yêu cầu thất bại (${res.status}).`);
+    throw new ApiError(res.status, opts.errorMessages?.[res.status] ?? defaultErrorMessage(res.status));
   }
 
   if (res.status === 204) return undefined as T;
