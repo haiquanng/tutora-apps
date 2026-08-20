@@ -67,7 +67,7 @@ export const RoadmapChapterPage = () => {
   const title = owner?.chapter.name ?? chapterName ?? 'Bài tập theo chương';
 
   return (
-    <div className="mx-auto max-w-[1100px] px-6 py-10">
+    <div className="mx-auto max-w-(--breakpoint-2xl) px-6 py-10">
       <Link to="/roadmap" className="inline-flex items-center gap-1.5 text-sm text-navy/55 transition hover:text-navy">
         <ArrowLeft className="size-4" />
         Lộ trình học tập

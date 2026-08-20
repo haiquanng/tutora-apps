@@ -148,7 +148,7 @@ export const SurveyFlow = ({
     return (
       <div className="mx-auto max-w-xl px-6 py-24 text-center">
         <p className="font-serif text-2xl text-navy">Chưa có môn nào mở đánh giá</p>
-        <p className="mt-3 text-[15px] text-navy/60">
+        <p className="mt-3 text-[15px] text-navy">
           Hiện chưa có môn học nào bật tính năng đánh giá đầu vào. Bạn quay lại sau nhé.
         </p>
         <button
@@ -172,7 +172,7 @@ export const SurveyFlow = ({
           type="button"
           onClick={() => (index === 0 ? onCancel() : setIndex(index - 1))}
           disabled={isStarting}
-          className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-navy/60 transition hover:bg-cream-light hover:text-navy disabled:opacity-40"
+          className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-navy transition hover:bg-cream-light hover:text-navy disabled:opacity-40"
         >
           <ArrowLeft className="size-4" />
           {index === 0 ? 'Thoát' : 'Quay lại'}
@@ -185,7 +185,7 @@ export const SurveyFlow = ({
             />
           ))}
         </div>
-        <span className="text-xs font-semibold tabular-nums text-navy/40">
+        <span className="text-xs font-semibold tabular-nums text-navy">
           {index + 1}/{total}
         </span>
       </div>
@@ -197,7 +197,7 @@ export const SurveyFlow = ({
           </span>
           <div>
             <h1 className="font-serif text-2xl leading-snug text-navy sm:text-[28px]">{step.question}</h1>
-            {step.hint && <p className="mt-2 text-[15px] text-navy/55">{step.hint}</p>}
+            {step.hint && <p className="mt-2 text-[15px] text-navy">{step.hint}</p>}
           </div>
         </div>
 
@@ -213,11 +213,11 @@ export const SurveyFlow = ({
                 className={`flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border px-5 py-4 text-left text-[15px] transition disabled:cursor-not-allowed disabled:opacity-60 ${
                   active
                     ? 'border-gold bg-cream-light font-semibold text-navy'
-                    : 'border-navy/10 bg-white text-navy/80 hover:border-gold/60 hover:bg-cream-light/50'
+                    : 'border-navy/10 bg-white text-navy hover:border-gold/60 hover:bg-cream-light/50'
                 }`}
               >
                 {opt.label}
-                {active && isStarting && <Loader2 className="size-4 shrink-0 animate-spin text-navy/50" />}
+                {active && isStarting && <Loader2 className="size-4 shrink-0 animate-spin text-navy/40" />}
               </button>
             );
           })}
@@ -230,7 +230,7 @@ export const SurveyFlow = ({
           </div>
         )}
 
-        {isStarting && <p className="mt-6 text-sm text-navy/50">Đang chọn đề phù hợp với bạn…</p>}
+        {isStarting && <p className="mt-6 text-sm text-navy">Đang chọn đề phù hợp với bạn…</p>}
       </div>
     </div>
   );

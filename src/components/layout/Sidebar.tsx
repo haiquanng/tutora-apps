@@ -213,8 +213,10 @@ export const Sidebar = ({ aiBalance, isOpen, onClose, history, historyLoading, o
             </li>
 
             <li>
+              {/* end: /assessment/history là mục riêng. */}
               <NavLink
                 to="/assessment"
+                end
                 onClick={closeFlyout}
                 className={linkClass(collapsed)}
                 title={collapsed ? 'Bài đánh giá' : undefined}
@@ -227,6 +229,7 @@ export const Sidebar = ({ aiBalance, isOpen, onClose, history, historyLoading, o
             <li>
               <NavLink
                 to="/assessment/history"
+                end
                 onClick={closeFlyout}
                 className={linkClass(collapsed)}
                 title={collapsed ? 'Lịch sử làm bài' : undefined}

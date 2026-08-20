@@ -74,7 +74,7 @@ export const AppPage = () => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8">
+    <div className="mx-auto w-full max-w-(--breakpoint-2xl) px-4 py-8">
       {/* Banner tải app */}
       <BlurFade>
         <section className="relative grid items-center gap-8 overflow-hidden rounded-3xl bg-gradient-to-br from-cream-light to-cream-light/30 p-8 lg:grid-cols-[1.2fr_1fr]">

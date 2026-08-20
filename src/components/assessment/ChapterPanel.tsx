@@ -107,7 +107,7 @@ export const ChapterPanel = ({
               <span className={`rounded-lg border px-2.5 py-0.5 text-[12px] font-semibold ${verdict.chip}`}>
                 {verdict.text}
               </span>
-              <span className="text-[13px] text-navy/50">
+              <span className="text-[13px] text-navy">
                 Đúng {chapter.correct}/{chapter.total} câu
               </span>
             </div>
@@ -116,18 +116,18 @@ export const ChapterPanel = ({
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-lg text-navy/45 transition hover:bg-cream-light hover:text-navy"
+            className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-lg text-navy transition hover:bg-cream-light"
           >
             <X className="size-4" />
           </button>
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-7 py-6">
-          {note && <p className="text-[15px] leading-relaxed text-navy/75">{note}</p>}
+          {note && <p className="text-[15px] leading-relaxed text-navy">{note}</p>}
 
           {improve.length > 0 && (
             <div className="mt-5">
-              <h4 className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wide text-navy/50">
+              <h4 className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wide text-navy">
                 <Dumbbell className="size-3.5" />
                 Dạng bài nên luyện
               </h4>
@@ -135,7 +135,7 @@ export const ChapterPanel = ({
                 {improve.map((item) => (
                   <li key={item.title} className="rounded-xl border border-navy/10 bg-cream-light/40 px-3.5 py-2.5">
                     <p className="text-[14px] font-semibold text-navy">{item.title}</p>
-                    {item.why && <p className="mt-0.5 text-[13px] leading-relaxed text-navy/55">{item.why}</p>}
+                    {item.why && <p className="mt-0.5 text-[13px] leading-relaxed text-navy">{item.why}</p>}
                   </li>
                 ))}
               </ul>
@@ -143,17 +143,17 @@ export const ChapterPanel = ({
           )}
 
           <div className="mt-5">
-            <h4 className="text-[12px] font-semibold uppercase tracking-wide text-navy/50">Bài tập trong kho</h4>
+            <h4 className="text-[12px] font-semibold uppercase tracking-wide text-navy">Bài tập trong kho</h4>
 
             {isLoading && (
-              <p className="mt-2.5 flex items-center gap-2 text-[14px] text-navy/50">
+              <p className="mt-2.5 flex items-center gap-2 text-[14px] text-navy">
                 <Loader2 className="size-3.5 animate-spin" />
                 Đang tìm bài tập…
               </p>
             )}
 
             {!isLoading && questions.length === 0 && (
-              <p className="mt-2.5 text-[14px] leading-relaxed text-navy/50">
+              <p className="mt-2.5 text-[14px] leading-relaxed text-navy">
                 {slug
                   ? 'Chương này chưa có bài tập trong kho. Bạn có thể hỏi AI ở trang Giải bài tập.'
                   : 'Chương này chưa gắn mã nên chưa tra được bài tập.'}
@@ -169,7 +169,7 @@ export const ChapterPanel = ({
                       onClick={openChapter}
                       className="w-full cursor-pointer rounded-xl border border-navy/10 bg-white px-3.5 py-2.5 text-left transition hover:border-gold hover:bg-cream-light/50"
                     >
-                      <span className="line-clamp-2 text-[14px] leading-relaxed text-navy/80">
+                      <span className="line-clamp-2 text-[14px] leading-relaxed text-navy">
                         <MathText>{q.content}</MathText>
                       </span>
                     </button>

@@ -46,7 +46,7 @@ export const AnalysisPanel = ({ analysis }: { analysis: Analysis }) => {
         {analysis.summary && (
           <>
             <p
-              className={`mt-4 whitespace-pre-line text-[15px] leading-relaxed text-navy/80 ${
+              className={`mt-4 whitespace-pre-line text-[15px] leading-relaxed text-navy ${
                 expanded ? '' : 'line-clamp-4'
               }`}
             >
@@ -56,7 +56,7 @@ export const AnalysisPanel = ({ analysis }: { analysis: Analysis }) => {
               <button
                 type="button"
                 onClick={() => setExpanded((v) => !v)}
-                className="mt-1.5 cursor-pointer text-[13px] font-semibold text-navy/60 transition hover:text-navy"
+                className="mt-1.5 cursor-pointer text-[13px] font-semibold text-navy transition hover:opacity-70"
               >
                 {expanded ? 'Thu gọn' : 'Xem thêm'}
               </button>
@@ -65,12 +65,12 @@ export const AnalysisPanel = ({ analysis }: { analysis: Analysis }) => {
         )}
 
         {analysis.confidence && CONFIDENCE_NOTE[analysis.confidence] && (
-          <p className="mt-3 text-[13px] italic leading-relaxed text-navy/45">{CONFIDENCE_NOTE[analysis.confidence]}</p>
+          <p className="mt-3 text-[13px] italic leading-relaxed text-navy">{CONFIDENCE_NOTE[analysis.confidence]}</p>
         )}
 
         {analysis.next_action && (
           <div className="mt-4 flex items-start gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 py-3">
-            <Lightbulb className="mt-0.5 size-4 shrink-0 text-navy/70" />
+            <Lightbulb className="mt-0.5 size-4 shrink-0 text-navy" />
             <p className="text-[15px] leading-relaxed text-navy">{analysis.next_action}</p>
           </div>
         )}

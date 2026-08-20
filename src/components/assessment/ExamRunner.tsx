@@ -135,7 +135,7 @@ export const ExamRunner = ({
       <header className="flex shrink-0 items-center gap-4 border-b border-navy/10 bg-white px-5 py-3">
         <div className="min-w-0 flex-1">
           <p className="truncate font-serif text-[17px] text-navy">{attempt.title}</p>
-          <p className="mt-0.5 truncate text-xs text-navy/50">
+          <p className="mt-0.5 truncate text-xs text-navy">
             {[attempt.subjectName, attempt.gradeName].filter(Boolean).join(' · ')}
           </p>
         </div>
@@ -154,7 +154,7 @@ export const ExamRunner = ({
         {/* Panel trái: lưới câu + timer dưới. Ẩn trên mobile, thay bằng thanh dưới. */}
         <aside className="hidden w-60 shrink-0 flex-col justify-between border-r border-navy/10 bg-white p-4 lg:flex">
           <div className="min-h-0 overflow-y-auto">
-            <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-navy/40">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-navy">
               Câu hỏi ({answeredCount}/{total})
             </p>
             <div className="grid grid-cols-5 gap-2">
@@ -172,7 +172,7 @@ export const ExamRunner = ({
                         ? 'border-navy bg-navy text-cream'
                         : done
                           ? 'border-gold bg-cream-light text-navy'
-                          : 'border-navy/12 bg-white text-navy/50 hover:border-gold/60'
+                          : 'border-navy/12 bg-white text-navy hover:border-gold/60'
                     }`}
                   >
                     {i + 1}
@@ -184,7 +184,7 @@ export const ExamRunner = ({
               })}
             </div>
 
-            <div className="mt-4 space-y-1.5 border-t border-navy/8 pt-3 text-[11px] text-navy/45">
+            <div className="mt-4 space-y-1.5 border-t border-navy/8 pt-3 text-[11px] text-navy">
               <p className="flex items-center gap-1.5">
                 <span className="size-2.5 rounded border border-gold bg-cream-light" />
                 Đã trả lời
@@ -207,7 +207,7 @@ export const ExamRunner = ({
                 urgent ? 'border-burgundy/30 bg-burgundy/5' : 'border-navy/10 bg-cream-light/50'
               }`}
             >
-              <p className="flex items-center justify-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-navy/45">
+              <p className="flex items-center justify-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-navy">
                 <Clock className="size-3" />
                 Thời gian còn lại
               </p>
@@ -223,7 +223,7 @@ export const ExamRunner = ({
           <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
             <div className="mx-auto max-w-3xl px-6 py-8">
               {index === 0 && attempt.description && (
-                <p className="mb-6 rounded-xl border border-navy/10 bg-white px-5 py-4 text-[15px] leading-relaxed text-navy/70">
+                <p className="mb-6 rounded-xl border border-navy/10 bg-white px-5 py-4 text-[15px] leading-relaxed text-navy">
                   {attempt.description}
                 </p>
               )}
@@ -231,7 +231,7 @@ export const ExamRunner = ({
               {current && (
                 <>
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-[13px] font-semibold text-navy/45">
+                    <p className="text-[13px] font-semibold text-navy">
                       Câu {index + 1} / {total}
                     </p>
                     <button
@@ -240,7 +240,7 @@ export const ExamRunner = ({
                       className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition ${
                         flagged.has(current.id)
                           ? 'border-burgundy/35 bg-burgundy/8 text-burgundy'
-                          : 'border-navy/12 text-navy/60 hover:border-burgundy/40 hover:text-burgundy'
+                          : 'border-navy/12 text-navy hover:border-burgundy/40 hover:text-burgundy'
                       }`}
                     >
                       <Flag className="size-3.5" />
@@ -272,14 +272,12 @@ export const ExamRunner = ({
               </button>
 
               <div className="flex flex-1 flex-col items-center gap-0.5">
-                <span className="text-xs font-semibold tabular-nums text-navy/50 lg:hidden">
+                <span className="text-xs font-semibold tabular-nums text-navy lg:hidden">
                   {index + 1}/{total} · đã làm {answeredCount}
                 </span>
                 {msLeft !== null && (
                   <span
-                    className={`text-sm font-semibold tabular-nums lg:hidden ${
-                      urgent ? 'text-burgundy' : 'text-navy/70'
-                    }`}
+                    className={`text-sm font-semibold tabular-nums lg:hidden ${urgent ? 'text-burgundy' : 'text-navy'}`}
                   >
                     {formatLeft(msLeft)}
                   </span>

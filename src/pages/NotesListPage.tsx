@@ -81,7 +81,7 @@ export const NotesListPage = ({ onNotesChange }: Props) => {
 
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-6xl px-4 py-8">
+      <div className="mx-auto w-full max-w-(--breakpoint-2xl) px-4 py-8">
         <h1 className="mb-6 font-serif text-2xl font-bold">Note của tôi</h1>
         <ul className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -109,7 +109,7 @@ export const NotesListPage = ({ onNotesChange }: Props) => {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl flex-1 overflow-y-auto px-4 py-8">
+    <div className="mx-auto w-full max-w-(--breakpoint-2xl) flex-1 overflow-y-auto px-4 py-8">
       <h1 className="mb-4 font-serif text-2xl font-bold">Note của tôi</h1>
 
       <div className="mb-5 flex flex-wrap items-center gap-2">

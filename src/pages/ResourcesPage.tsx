@@ -16,7 +16,7 @@ export const ResourcesPage = () => {
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto px-4 py-8">
+    <div className="mx-auto w-full max-w-(--breakpoint-2xl) flex-1 overflow-y-auto px-4 py-8">
       <h1 className="font-serif text-2xl font-bold">Tài nguyên</h1>
       <p className="mt-1 text-navy/60">Chọn chương để luyện tập theo đúng chương trình.</p>
 

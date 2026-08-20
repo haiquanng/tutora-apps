@@ -57,7 +57,7 @@ export const HistoryPage = () => {
 
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-3xl px-4 py-8">
+      <div className="mx-auto w-full max-w-(--breakpoint-2xl) px-4 py-8">
         <h1 className="mb-6 font-serif text-2xl font-bold">Lịch sử</h1>
         <HistorySkeleton />
       </div>
@@ -75,7 +75,7 @@ export const HistoryPage = () => {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto px-4 py-8">
+    <div className="mx-auto w-full max-w-(--breakpoint-2xl) flex-1 overflow-y-auto px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="font-serif text-2xl font-bold">Lịch sử</h1>
         <button
