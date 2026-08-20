@@ -1,17 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { AuthContext } from './authContext';
 import type { AuthValue } from './authContext';
-import { consumeSessionFromUrl, fetchCurrentUser, logout, redirectToLogin } from '../services/auth.service';
+import { consumeSessionFromUrl, fetchCurrentUser, logout } from '../services/auth.service';
 import type { AuthUser } from '../services/auth.service';
+import { LoginModal } from '../components/auth/LoginModal';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setLoading] = useState(true);
+  const [isLoginOpen, setLoginOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    // Vừa từ trang login quay về -> lấy token trong fragment TRƯỚC khi hỏi BE.
+    // Link cũ còn gửi token qua fragment, đọc trước khi hỏi BE.
     consumeSessionFromUrl();
     fetchCurrentUser()
       .then((current) => {
@@ -25,7 +27,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const value = useMemo<AuthValue>(() => ({ user, isLoading, login: redirectToLogin, logout }), [user, isLoading]);
+  // Modal giữ người dùng ở lại, câu đang gõ không mất.
+  const login = useCallback(() => setLoginOpen(true), []);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const value = useMemo<AuthValue>(() => ({ user, isLoading, login, logout }), [user, isLoading, login]);
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <LoginModal isOpen={isLoginOpen} onClose={() => setLoginOpen(false)} onSuccess={setUser} />
+    </AuthContext.Provider>
+  );
 };
