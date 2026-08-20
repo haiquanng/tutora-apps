@@ -7,6 +7,7 @@ import { RoadmapMindmap } from '../components/assessment/RoadmapMindmap';
 import { ChapterPanel } from '../components/assessment/ChapterPanel';
 import { RoadmapSteps } from '../components/assessment/RoadmapSteps';
 import {
+  isScoredFormat,
   fetchAttemptResult,
   parseAnalysisResult,
   runAnalysis,
@@ -25,13 +26,10 @@ const formatDuration = (seconds: number | null) => {
   return m > 0 ? `${m} phút ${s}s` : `${s}s`;
 };
 
-const Stat = ({ label, value, hint }: { label: string; value: string; hint?: string }) => (
+const Stat = ({ label, value }: { label: string; value: string }) => (
   <div className="rounded-xl border border-navy/10 bg-white px-4 py-3">
-    <p className="text-xs text-navy/45">{label}</p>
-    <p className="mt-0.5 font-serif text-xl text-navy">
-      {value}
-      {hint && <span className="ml-1.5 text-sm text-navy/45">{hint}</span>}
-    </p>
+    <p className="text-xs font-medium text-navy">{label}</p>
+    <p className="mt-0.5 font-serif text-xl text-navy">{value}</p>
   </div>
 );
 
@@ -135,7 +133,7 @@ export const AssessmentResultPage = () => {
     return (
       <div className="mx-auto max-w-xl px-6 py-24 text-center">
         <p className="font-serif text-2xl text-navy">Không tìm thấy kết quả</p>
-        <p className="mt-3 text-[15px] text-navy/60">
+        <p className="mt-3 text-[15px] text-navy">
           {loadError ?? 'Bài làm này không tồn tại hoặc không thuộc về bạn.'}
         </p>
         <button
@@ -151,6 +149,11 @@ export const AssessmentResultPage = () => {
 
   const duration = formatDuration(result.durationSeconds);
 
+  // Chỉ trắc nghiệm vào điểm.
+  const scoredAnswers = result.answers.filter((a) => isScoredFormat(a.questionFormat));
+  const reviewedAnswers = result.answers.filter((a) => !isScoredFormat(a.questionFormat));
+  const reviewedCount = reviewedAnswers.length;
+
   // Bài bỏ dở: chưa nộp nên chưa có câu trả lời nào được chấm. Hiện 0/0 + lỗi phân tích
   // là sai sự thật -> nói thẳng trạng thái và mời làm lại.
   if (!isSubmitted(result)) {
@@ -160,19 +163,19 @@ export const AssessmentResultPage = () => {
           <button
             type="button"
             onClick={() => navigate(backTo)}
-            className="flex cursor-pointer items-center gap-1.5 text-sm text-navy/55 transition hover:text-navy"
+            className="flex cursor-pointer items-center gap-1.5 text-sm text-navy transition hover:opacity-70"
           >
             <ArrowLeft className="size-4" />
             {backLabel}
           </button>
 
           <div className="mt-8 rounded-2xl border border-navy/10 bg-white p-8 text-center">
-            <p className="text-xs font-semibold uppercase tracking-wide text-navy/40">Bài chưa hoàn thành</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-navy">Bài chưa hoàn thành</p>
             <h1 className="mt-2 font-serif text-2xl text-navy">{result.title}</h1>
-            <p className="mt-1.5 text-[15px] text-navy/55">
+            <p className="mt-1.5 text-[15px] text-navy">
               {[result.subjectName, result.gradeName].filter(Boolean).join(' · ')}
             </p>
-            <p className="mt-5 text-[15px] leading-relaxed text-navy/70">
+            <p className="mt-5 text-[15px] leading-relaxed text-navy">
               Bạn đã thoát ra khi đang làm bài này nên chưa có kết quả. Làm lại từ đầu để nhận điểm và phân tích nhé.
             </p>
 
@@ -200,32 +203,26 @@ export const AssessmentResultPage = () => {
 
   return (
     <div className="min-h-screen bg-cream">
-      <div className="mx-auto max-w-[1600px] px-6 py-10 2xl:px-10">
+      <div className="mx-auto max-w-(--breakpoint-2xl) px-6 py-10 2xl:px-10">
         <button
           type="button"
           onClick={() => navigate(backTo)}
-          className="flex cursor-pointer items-center gap-1.5 text-sm text-navy/55 transition hover:text-navy"
+          className="flex cursor-pointer items-center gap-1.5 text-sm text-navy transition hover:opacity-70"
         >
           <ArrowLeft className="size-4" />
           {backLabel}
         </button>
 
-        <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-navy/40">Kết quả đánh giá</p>
+        <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-navy">Kết quả đánh giá</p>
         <h1 className="mt-1.5 font-serif text-3xl text-navy">{result.title}</h1>
-        <p className="mt-1.5 text-[15px] text-navy/55">
+        <p className="mt-1.5 text-[15px] text-navy">
           {[result.subjectName, result.gradeName].filter(Boolean).join(' · ')}
         </p>
 
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:max-w-2xl">
-          {/* showResult=false -> ẩn ĐIỂM, vẫn cho xem đáp án + phân tích. */}
-          {result.showResult && (
-            <Stat
-              label="Điểm"
-              value={`${result.earnedPoints}/${result.maxPoints}`}
-              hint={result.scorePercent !== null ? `(${result.scorePercent}%)` : undefined}
-            />
-          )}
-          <Stat label="Số câu đúng" value={`${result.correctCount}/${result.totalQuestions}`} />
+          {/* Một thang đo duy nhất — ô "Điểm" cũ lệch với số câu đúng. */}
+          <Stat label="Số câu đúng (trắc nghiệm)" value={`${result.correctCount}/${result.totalQuestions}`} />
+          {reviewedCount > 0 && <Stat label="Câu tự luận" value={`${reviewedCount}`} />}
           {duration && <Stat label="Thời gian làm" value={duration} />}
         </div>
 
@@ -248,7 +245,7 @@ export const AssessmentResultPage = () => {
             <h2 className="mb-4 font-serif text-xl text-navy">AI nhận xét</h2>
 
             {isAnalyzing && (
-              <div className="flex items-center gap-3 rounded-2xl border border-navy/10 bg-white px-5 py-6 text-[15px] text-navy/60">
+              <div className="flex items-center gap-3 rounded-2xl border border-navy/10 bg-white px-5 py-6 text-[15px] text-navy">
                 <Loader2 className="size-4 animate-spin" />
                 AI đang đọc bài làm và xây lộ trình cho bạn…
               </div>
@@ -257,7 +254,7 @@ export const AssessmentResultPage = () => {
             {!isAnalyzing && analysisError && (
               <div className="rounded-2xl border border-burgundy/20 bg-burgundy/5 px-5 py-5">
                 <p className="text-[15px] text-burgundy">{analysisError}</p>
-                <p className="mt-1 text-[14px] text-navy/55">Bài làm và điểm của bạn vẫn được giữ nguyên.</p>
+                <p className="mt-1 text-[14px] text-navy">Bài làm và điểm của bạn vẫn được giữ nguyên.</p>
                 <button
                   type="button"
                   onClick={() => void analyze()}
@@ -284,8 +281,18 @@ export const AssessmentResultPage = () => {
 
         <section className="mt-10">
           <h2 className="mb-4 font-serif text-xl text-navy">Xem lại bài làm</h2>
-          <AnswerReview answers={result.answers} />
+          <AnswerReview answers={scoredAnswers} />
         </section>
+
+        {reviewedCount > 0 && (
+          <section className="mt-10">
+            <h2 className="font-serif text-xl text-navy">Câu tự luận</h2>
+            <p className="mb-4 mt-1 text-[15px] text-navy">
+              Những câu này không tính vào điểm — bạn xem đáp án mẫu và phần AI nhận xét ở trên nhé.
+            </p>
+            <AnswerReview answers={reviewedAnswers} />
+          </section>
+        )}
 
         <div className="mt-8 flex flex-wrap gap-3">
           <button
