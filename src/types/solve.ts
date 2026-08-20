@@ -23,6 +23,24 @@ export interface SolveChunk {
   steps?: SolutionStep[];
   steps_final?: SolutionStep[];
   classification?: TopicClassification;
+  rag_used?: boolean;
+  bank_verified?: boolean;
+  bank_similarity?: number | null;
+  bank_question_id?: string | null;
+  verified?: boolean | null;
+}
+
+/** Mức tin cậy của một lời giải — quyết định nhãn hiện trên UI. */
+export interface AnswerTrust {
+  /** Trùng khít câu gia sư đã duyệt (similarity >= 0.97). */
+  bankVerified?: boolean;
+  /** Có bài mẫu đã duyệt để tham chiếu, nhưng chưa trùng khít. */
+  ragUsed?: boolean;
+  /** null = không kết luận được (hình học/chứng minh) -> không hiện nhãn. */
+  verified?: boolean | null;
+  similarity?: number | null;
+  /** Câu gốc trong bank -> mở để đối chiếu. */
+  questionId?: string | null;
 }
 
 /** 1 bước lời giải hiển thị trên canvas (backend tách sẵn, xem step_segmenter.py). */
@@ -50,6 +68,7 @@ export interface ChatTurn {
   thinking?: string;
   isStreaming?: boolean;
   noteSaved?: boolean;
+  trust?: AnswerTrust;
 }
 
 /** Một phiên hỏi bài, lưu ở history (localStorage). */

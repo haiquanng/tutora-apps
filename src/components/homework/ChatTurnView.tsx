@@ -1,6 +1,7 @@
 import { Loader2, PanelRight } from 'lucide-react';
 import { Markdown } from './Markdown';
 import { ThinkingBlock } from './ThinkingBlock';
+import { AnswerTrustBadge } from './AnswerTrustBadge';
 import { VoteButtons } from '../ui/VoteButtons';
 import { MESSAGE_REASONS, voteMessage } from '../../services/feedback.service';
 import type { ChatTurn } from '../../types/solve';
@@ -47,14 +48,20 @@ export const ChatTurnView = ({ turn, onOpenCanvas, isActiveInPanel }: Props) => 
           </button>
         )}
 
-      {!turn.isStreaming && turn.answer && turn.messageId && (
-        <VoteButtons
-          reasons={MESSAGE_REASONS}
-          initialVote={turn.myVote}
-          onVote={(vote, reason, detail) => voteMessage(turn.messageId!, vote, reason, detail)}
-          modalTitle="Lời giải chưa ổn ở đâu?"
-          modalDescription="Cho mình biết để cải thiện chất lượng lời giải nhé."
-        />
+      {/* Nhãn tin cậy + vote cùng một hàng: đều là "đánh giá lời giải này". */}
+      {!turn.isStreaming && turn.answer && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          {turn.messageId && (
+            <VoteButtons
+              reasons={MESSAGE_REASONS}
+              initialVote={turn.myVote}
+              onVote={(vote, reason, detail) => voteMessage(turn.messageId!, vote, reason, detail)}
+              modalTitle="Lời giải chưa ổn ở đâu?"
+              modalDescription="Cho mình biết để cải thiện chất lượng lời giải nhé."
+            />
+          )}
+          <AnswerTrustBadge trust={turn.trust} />
+        </div>
       )}
 
       {turn.isStreaming && (
