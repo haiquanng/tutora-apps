@@ -139,7 +139,7 @@ export const RoadmapPage = () => {
   }
 
   return (
-    <div className="mx-auto max-w-[1600px] px-6 py-10 2xl:px-10">
+    <div className="mx-auto max-w-(--breakpoint-2xl) px-6 py-10 2xl:px-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-serif text-3xl text-navy">Lộ trình học tập</h1>

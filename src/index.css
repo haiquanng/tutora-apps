@@ -85,15 +85,25 @@
   }
 }
 
-/* KaTeX trong bubble/step: cho phép cuộn ngang thay vì vỡ layout. */
+/* KaTeX trong bubble/step: cuộn ngang thay vì vỡ layout.
+   overflow-y PHẢI là visible — hidden cắt cụt tử/mẫu của phân số cao. */
 .katex-display {
-  @apply overflow-x-auto overflow-y-hidden py-1;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 0.5rem 0;
 }
 
 :not(.katex-display) > .katex {
   display: inline-block;
   vertical-align: middle;
   line-height: 1.2;
+}
+
+:not(.katex-display) > .katex:has(.mfrac, .sqrt) {
+  margin-block: 0.3em;
+}
+.katex {
+  font-family: KaTeX_Main, 'Times New Roman', serif;
 }
 
 .spotlight-card {

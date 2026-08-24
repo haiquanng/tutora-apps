@@ -11,6 +11,13 @@ interface Props {
 /**
  * Markdown + LaTeX ($...$, $$...$$) dùng chung cho mọi chỗ hiển thị lời giải.
  */
+export const KATEX_OPTIONS = {
+  strict: false as const,
+  throwOnError: false,
+  trust: false,
+  macros: { '\\frac': '{\\displaystyle\\dfrac{#1}{#2}}' },
+} as const;
+
 export const Markdown = ({ children }: Props) => (
   <div
     className="
@@ -35,15 +42,14 @@ export const Markdown = ({ children }: Props) => (
       [&_table]:my-4 [&_table]:w-full [&_table]:overflow-hidden [&_table]:text-sm
       [&_th]:border [&_th]:border-navy/10 [&_th]:bg-cream-light [&_th]:px-3 [&_th]:py-2 [&_th]:text-left
       [&_td]:border [&_td]:border-navy/10 [&_td]:px-3 [&_td]:py-2
-      [&_.katex-display]:my-4 [&_.katex-display]:overflow-x-auto [&_.katex-display]:overflow-y-hidden [&_.katex-display]:py-1
-      [&_.katex]:leading-normal
+      [&_.katex-display]:my-4
       [&_.katex]:my-1 [&_.katex]:inline-block
       [&_.katex-display_.katex]:my-0 [&_.katex-display_.katex]:block
     "
   >
     {/* remarkMath TRƯỚC remarkBreaks để \n trong $$...$$ không bị đổi thành <br>.
         remarkBreaks: \n đơn -> xuống dòng (model xuất mỗi hệ số/công thức 1 dòng bằng \n). */}
-    <ReactMarkdown remarkPlugins={[remarkMath, remarkGfm, remarkBreaks]} rehypePlugins={[rehypeKatex]}>
+    <ReactMarkdown remarkPlugins={[remarkMath, remarkGfm, remarkBreaks]} rehypePlugins={[[rehypeKatex, KATEX_OPTIONS]]}>
       {children}
     </ReactMarkdown>
   </div>

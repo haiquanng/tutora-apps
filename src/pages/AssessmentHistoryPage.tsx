@@ -41,25 +41,25 @@ const Row = ({ attempt }: { attempt: AttemptResult }) => {
           {attempt.showResult && percent !== null && percent !== undefined ? (
             <span className={`font-serif text-lg font-semibold ${scoreTone(percent)}`}>{Math.round(percent)}%</span>
           ) : (
-            <ClipboardCheck className="size-5 text-navy/40" />
+            <ClipboardCheck className="size-5 text-navy" />
           )}
         </span>
 
         <span className="min-w-0 flex-1">
           <span className="block truncate font-medium text-navy">{attempt.title}</span>
-          <span className="mt-0.5 block text-xs text-navy/45">
+          <span className="mt-0.5 block text-xs text-navy">
             {[attempt.subjectName, attempt.gradeName].filter(Boolean).join(' · ') || 'Bài đánh giá'}
           </span>
-          <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-navy/45">
+          <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-navy">
             {attempt.showResult && (
-              <span className="text-navy/60">
+              <span className="text-navy">
                 {attempt.correctCount}/{attempt.totalQuestions} câu đúng
               </span>
             )}
             <span>{formatDate(attempt.submittedAt ?? attempt.startedAt)}</span>
             {duration && <span>· {duration}</span>}
             {attempt.analysisStatus === 'done' && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-cream-light px-2 py-0.5 text-navy/60">
+              <span className="inline-flex items-center gap-1 rounded-full bg-cream-light px-2 py-0.5 text-navy">
                 <Sparkles className="size-3" /> Đã phân tích
               </span>
             )}
@@ -116,10 +116,10 @@ export const AssessmentHistoryPage = () => {
   useEffect(() => load(page), [load, page]);
 
   return (
-    <div className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto px-4 py-8">
+    <div className="mx-auto w-full max-w-(--breakpoint-2xl) flex-1 overflow-y-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="font-serif text-2xl font-bold text-navy">Lịch sử làm bài</h1>
-        <p className="mt-1 text-sm text-navy/50">
+        <p className="mt-1 text-sm text-navy">
           {totalCount > 0
             ? `${totalCount} lượt đánh giá — mở lại để xem đáp án và phân tích.`
             : 'Các bài đánh giá bạn đã làm sẽ xuất hiện ở đây.'}
@@ -134,7 +134,7 @@ export const AssessmentHistoryPage = () => {
         </ul>
       ) : error ? (
         <div className="rounded-2xl border border-navy/10 bg-white p-8 text-center">
-          <p className="text-navy/60">{error}</p>
+          <p className="text-navy">{error}</p>
           <button
             type="button"
             onClick={() => load(page)}
@@ -147,7 +147,7 @@ export const AssessmentHistoryPage = () => {
         <div className="flex flex-col items-center justify-center rounded-2xl border border-navy/10 bg-white px-4 py-16 text-center">
           <ClipboardCheck className="size-10 text-navy/20" />
           <h2 className="mt-4 font-serif text-xl font-semibold text-navy">Chưa làm bài nào</h2>
-          <p className="mt-1 text-navy/50">Làm một bài đánh giá để biết mình đang ở đâu.</p>
+          <p className="mt-1 text-navy">Làm một bài đánh giá để biết mình đang ở đâu.</p>
           <button
             type="button"
             onClick={() => navigate('/assessment')}
@@ -175,7 +175,7 @@ export const AssessmentHistoryPage = () => {
               >
                 <ChevronLeft className="size-4" />
               </button>
-              <span className="px-2 text-sm text-navy/60">
+              <span className="px-2 text-sm text-navy">
                 Trang {page}/{totalPages}
               </span>
               <button

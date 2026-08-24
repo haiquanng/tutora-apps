@@ -47,14 +47,14 @@ export const NotePage = () => {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
         <TriangleAlert className="size-10 text-navy/20" />
-        <h2 className="mt-4 font-serif text-xl font-semibold">Không mở được note</h2>
-        <p className="mt-1 text-navy/50">Note không tồn tại hoặc đã bị xoá.</p>
+        <h2 className="mt-4 font-serif text-xl font-semibold">Không mở được ghi chú</h2>
+        <p className="mt-1 text-navy/50">Ghi chú không tồn tại hoặc đã bị xoá.</p>
         <button
           type="button"
           onClick={() => navigate('/notes')}
           className="mt-4 cursor-pointer rounded-xl bg-navy px-4 py-2 text-sm font-medium text-cream"
         >
-          Về danh sách Note
+          Về danh sách ghi chú
         </button>
       </div>
     );
@@ -71,7 +71,7 @@ export const NotePage = () => {
           className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-navy/60 transition hover:bg-cream-light hover:text-navy"
         >
           <ArrowLeft className="size-4" />
-          Note của tôi
+          Ghi chú của tôi
         </button>
       </div>
 
@@ -90,7 +90,7 @@ export const NotePage = () => {
                 onChange={(stepNotes) => save({ stepNotes })}
               />
             ) : (
-              <p className="py-6 text-center text-sm text-navy/45">Note này chưa có lời giải từng bước được lưu.</p>
+              <p className="py-6 text-center text-sm text-navy/45">Ghi chú này chưa có lời giải từng bước được lưu.</p>
             )}
           </section>
         </div>

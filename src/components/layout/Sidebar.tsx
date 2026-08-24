@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   BookMarked,
   Bookmark,
@@ -9,7 +9,6 @@ import {
   History,
   House,
   Map,
-  Plus,
   Smartphone,
   Sparkles,
 } from 'lucide-react';
@@ -18,8 +17,6 @@ import { ResourcesFlyout } from './ResourcesFlyout';
 import { HistoryList } from './HistoryList';
 
 import type { HistoryItem } from '../../types/solve';
-
-const NAV_ITEMS = [{ to: '/', label: 'Giải bài tập', icon: House, end: true }];
 
 const linkClass =
   (collapsed: boolean) =>
@@ -32,7 +29,7 @@ interface Props {
   aiBalance: number | null;
   isOpen: boolean;
   onClose: () => void;
-  // Lịch sử chat (chat_sessions) — mở lại ở /c/:id. Note có TRANG RIÊNG /notes (list→detail).
+  // Lịch sử chat (chat_sessions) — mở lại ở /c/:id. Ghi chú có TRANG RIÊNG /notes (list→detail).
   history: HistoryItem[];
   historyLoading: boolean;
   onDeleteHistory: (id: string) => void;
@@ -41,7 +38,6 @@ interface Props {
 const DESKTOP_QUERY = '(min-width: 1024px)'; // = breakpoint lg của Tailwind
 
 export const Sidebar = ({ aiBalance, isOpen, onClose, history, historyLoading, onDeleteHistory }: Props) => {
-  const navigate = useNavigate();
   const [isResourcesOpen, setResourcesOpen] = useState(false);
   const [anchor, setAnchor] = useState({ left: 0, top: 0 });
   const [isDesktop, setDesktop] = useState(() => window.matchMedia(DESKTOP_QUERY).matches);
@@ -140,37 +136,19 @@ export const Sidebar = ({ aiBalance, isOpen, onClose, history, historyLoading, o
       >
         {/* Nav items cố định — không scroll */}
         <nav className="shrink-0 overflow-x-hidden px-3 pt-3">
-          {/* Note mới — về trang trắng, đóng sidebar mobile. Kiểu nút "New chat" của Claude. */}
-          <button
-            type="button"
-            onClick={() => {
-              navigate('/');
-              if (!isDesktop) onClose();
-            }}
-            title={collapsed ? 'Note mới' : undefined}
-            className={`mb-2 flex w-full cursor-pointer items-center gap-2 rounded-xl border border-navy/10 bg-cream-light/60 py-2.5 text-[14px] font-semibold text-navy transition hover:border-gold hover:bg-cream-light ${
-              collapsed ? 'justify-center px-0' : 'px-3'
-            }`}
-          >
-            <Plus className="size-[18px] shrink-0" />
-            {!collapsed && 'Note mới'}
-          </button>
-
           <ul className="space-y-1">
-            {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
-              <li key={to}>
-                <NavLink
-                  to={to}
-                  end={end}
-                  onClick={closeFlyout}
-                  className={linkClass(collapsed)}
-                  title={collapsed ? label : undefined}
-                >
-                  <Icon className="size-[18px] shrink-0" />
-                  {!collapsed && label}
-                </NavLink>
-              </li>
-            ))}
+            <li>
+              <NavLink
+                to="/"
+                end
+                onClick={closeFlyout}
+                className={linkClass(collapsed)}
+                title={collapsed ? 'Giải bài tập' : undefined}
+              >
+                <House className="size-[18px] shrink-0" />
+                {!collapsed && 'Giải bài tập'}
+              </NavLink>
+            </li>
 
             <li ref={resourcesRef} onMouseEnter={openResources} onMouseLeave={scheduleClose} className="relative">
               <button
@@ -213,8 +191,10 @@ export const Sidebar = ({ aiBalance, isOpen, onClose, history, historyLoading, o
             </li>
 
             <li>
+              {/* end: /assessment/history là mục riêng. */}
               <NavLink
                 to="/assessment"
+                end
                 onClick={closeFlyout}
                 className={linkClass(collapsed)}
                 title={collapsed ? 'Bài đánh giá' : undefined}
@@ -227,6 +207,7 @@ export const Sidebar = ({ aiBalance, isOpen, onClose, history, historyLoading, o
             <li>
               <NavLink
                 to="/assessment/history"
+                end
                 onClick={closeFlyout}
                 className={linkClass(collapsed)}
                 title={collapsed ? 'Lịch sử làm bài' : undefined}
@@ -253,10 +234,10 @@ export const Sidebar = ({ aiBalance, isOpen, onClose, history, historyLoading, o
                 to="/notes"
                 onClick={closeFlyout}
                 className={linkClass(collapsed)}
-                title={collapsed ? 'Note của tôi' : undefined}
+                title={collapsed ? 'Ghi chú của tôi' : undefined}
               >
                 <Bookmark className="size-[18px] shrink-0" />
-                {!collapsed && 'Note của tôi'}
+                {!collapsed && 'Ghi chú của tôi'}
               </NavLink>
             </li>
 

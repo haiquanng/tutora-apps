@@ -1,5 +1,5 @@
 import { api } from './api.service';
-import type { ChatTurn, HistoryItem, SolutionStep } from '../types/solve';
+import type { AnswerTrust, ChatTurn, HistoryItem, SolutionStep } from '../types/solve';
 
 const HOMEWORK = 'homework';
 
@@ -18,7 +18,7 @@ interface MessageDto {
   role: string;
   content: string;
   imageUrl: string | null;
-  metadata: { steps?: SolutionStep[]; thinking?: string } | null;
+  metadata: { steps?: SolutionStep[]; thinking?: string; trust?: AnswerTrust } | null;
   noteSaved?: boolean;
   myVote?: number | null;
   createdAt: string;
@@ -48,6 +48,8 @@ const toTurns = (messages: MessageDto[]): ChatTurn[] => {
       last.answer = m.content;
       last.steps = m.metadata?.steps ?? [];
       last.thinking = m.metadata?.thinking ?? undefined;
+      // Nhãn tin cậy BE lưu kèm message -> mở lại phiên cũ vẫn thấy, không chỉ lúc stream.
+      last.trust = m.metadata?.trust ?? undefined;
       last.noteSaved = m.noteSaved ?? false;
       last.messageId = m.messageId;
       last.myVote = m.myVote === 1 || m.myVote === -1 ? m.myVote : undefined;

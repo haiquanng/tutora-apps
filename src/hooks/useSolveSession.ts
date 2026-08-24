@@ -94,7 +94,7 @@ export const useSolveSession = ({ onSessionStart, onSolved, onOutOfCredit }: Opt
             setTurns((prev) =>
               prev.map((t, i) => (i === prev.length - 1 ? { ...t, steps: [...t.steps, ...incoming] } : t)),
             ),
-          onDone: (final, _sessionId, finalSteps, messageId, classification) => {
+          onDone: (final, _sessionId, finalSteps, messageId, classification, trust) => {
             // finalSteps rỗng = câu hỏi thường -> giữ steps rỗng, UI render markdown.
             const next = turnsRef.current.map((t, i) =>
               i === turnsRef.current.length - 1
@@ -105,6 +105,7 @@ export const useSolveSession = ({ onSessionStart, onSolved, onOutOfCredit }: Opt
                     isStreaming: false,
                     messageId,
                     classification,
+                    trust,
                   }
                 : t,
             );
