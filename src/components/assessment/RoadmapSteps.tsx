@@ -26,27 +26,22 @@ export const RoadmapSteps = ({
           </span>
 
           <div className="rounded-xl border border-navy/10 bg-white p-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="font-serif text-[17px] text-navy">{step.chapter}</h3>
-              {step.estimatedSessions ? (
-                <span className="rounded-md bg-cream-light px-2 py-0.5 text-[11px] font-semibold text-navy/55">
-                  ~{step.estimatedSessions} buổi
-                </span>
-              ) : null}
-            </div>
+            {/* Không hiện estimatedSessions: AI đoán "~2 buổi" từ một bài 10 câu, con số
+                đó không có cơ sở khách quan nào. */}
+            <h3 className="font-serif text-[17px] text-navy">{step.chapter}</h3>
 
             {step.goal && (
-              <p className="mt-2 flex items-start gap-1.5 text-[15px] leading-relaxed text-navy/75">
+              <p className="mt-2 flex items-start gap-1.5 text-[15px] leading-relaxed text-navy">
                 <Target className="mt-1 size-3.5 shrink-0 text-gold" />
                 {step.goal}
               </p>
             )}
-            {step.why && <p className="mt-1.5 text-[14px] leading-relaxed text-navy/50">{step.why}</p>}
+            {step.why && <p className="mt-1.5 text-[14px] leading-relaxed text-navy">{step.why}</p>}
 
             {step.practice?.length ? (
               <ul className="mt-3 space-y-1">
                 {step.practice.map((item) => (
-                  <li key={item} className="flex items-start gap-1.5 text-[14px] text-navy/65">
+                  <li key={item} className="flex items-start gap-1.5 text-[14px] text-navy">
                     <span className="mt-[7px] size-1 shrink-0 rounded-full bg-navy/30" />
                     {item}
                   </li>

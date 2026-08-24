@@ -45,7 +45,7 @@ export const QuestionCard = ({
           <div className="text-[19px] leading-relaxed text-navy">
             <MathText>{question.content}</MathText>
           </div>
-          <p className="mt-2 text-xs font-medium uppercase tracking-wide text-navy/40">
+          <p className="mt-2 text-xs font-medium uppercase tracking-wide text-navy">
             {FORMAT_HINT[format] ?? 'Trả lời'}
           </p>
 
@@ -73,11 +73,11 @@ export const QuestionCard = ({
                         className={`mt-0.5 flex size-5 shrink-0 items-center justify-center text-[11px] font-bold transition ${
                           // Chọn 1 -> tròn; chọn nhiều/đúng-sai -> vuông.
                           format === 'single_choice' ? 'rounded-full' : 'rounded'
-                        } ${active ? 'bg-navy text-cream' : 'border border-navy/25 text-navy/50'}`}
+                        } ${active ? 'bg-navy text-cream' : 'border border-navy/25 text-navy'}`}
                       >
                         {active ? <Check className="size-3" /> : opt.key}
                       </span>
-                      <span className="min-w-0 flex-1 text-[15px] leading-relaxed text-navy/85">
+                      <span className="min-w-0 flex-1 text-[15px] leading-relaxed text-navy">
                         <MathText>{opt.text}</MathText>
                       </span>
                     </button>
@@ -92,7 +92,7 @@ export const QuestionCard = ({
                 value={answer ?? ''}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="Nhập đáp án của bạn…"
-                className="w-full rounded-xl border border-navy/15 bg-white px-4 py-3 text-[15px] text-navy outline-none transition placeholder:text-navy/35 focus:border-gold"
+                className="w-full rounded-xl border border-navy/15 bg-white px-4 py-3 text-[15px] text-navy outline-none transition placeholder:text-navy focus:border-gold"
               />
             )}
 
@@ -102,7 +102,7 @@ export const QuestionCard = ({
                 onChange={(e) => onChange(e.target.value)}
                 rows={6}
                 placeholder="Trình bày bài làm của bạn…"
-                className="w-full resize-y rounded-xl border border-navy/15 bg-white px-4 py-3 text-[15px] leading-relaxed text-navy outline-none transition placeholder:text-navy/35 focus:border-gold"
+                className="w-full resize-y rounded-xl border border-navy/15 bg-white px-4 py-3 text-[15px] leading-relaxed text-navy outline-none transition placeholder:text-navy focus:border-gold"
               />
             )}
           </div>

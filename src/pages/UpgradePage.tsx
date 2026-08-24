@@ -72,7 +72,7 @@ export const UpgradePage = () => {
 
   return (
     <div className="min-h-screen bg-cream">
-      <div className="mx-auto w-full max-w-5xl px-6 py-8">
+      <div className="mx-auto w-full max-w-(--breakpoint-2xl) px-6 py-8">
         <button
           type="button"
           onClick={() => navigate(-1)}

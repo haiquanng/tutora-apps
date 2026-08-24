@@ -63,7 +63,7 @@ const GroupNode = ({ data }: NodeProps) => {
         <span className={`size-2.5 rounded-full ${style.dot}`} />
         <p className="whitespace-nowrap text-[14px] font-bold text-navy">
           {style.group}
-          <span className="ml-1.5 font-medium text-navy/40">({String(data.count)})</span>
+          <span className="ml-1.5 font-medium text-navy">({String(data.count)})</span>
         </p>
       </div>
     </>
@@ -194,7 +194,7 @@ export const RoadmapMindmap = ({
 
   if (!analysis.chapter_mastery.length) {
     return (
-      <p className="rounded-xl border border-navy/10 bg-white px-5 py-6 text-center text-[15px] text-navy/55">
+      <p className="rounded-xl border border-navy/10 bg-white px-5 py-6 text-center text-[15px] text-navy">
         Bài đánh giá này chưa gắn chương nên chưa dựng được bản đồ kiến thức. Bạn xem phần lộ trình gợi ý bên dưới nhé.
       </p>
     );
@@ -220,7 +220,7 @@ export const RoadmapMindmap = ({
           <Controls showInteractive={false} className="!border-navy/10 !bg-white" />
         </ReactFlow>
       </div>
-      <p className="mt-2 text-center text-[13px] text-navy/45">Bấm vào một chương để xem nhận xét và bài tập.</p>
+      <p className="mt-2 text-center text-[13px] text-navy">Bấm vào một chương để xem nhận xét và bài tập.</p>
     </>
   );
 };

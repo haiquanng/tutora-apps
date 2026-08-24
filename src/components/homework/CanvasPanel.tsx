@@ -34,7 +34,7 @@ export const CanvasPanel = ({ title, steps, onClose, version, onSaveNote, saveSt
             type="button"
             onClick={onSaveNote}
             disabled={saveState === 'saving' || saveState === 'saved'}
-            title="Lưu thành Note"
+            title="Lưu thành ghi chú"
             className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${
               saveState === 'saved'
                 ? 'border-gold/50 bg-gold/10 text-burgundy'
@@ -48,7 +48,7 @@ export const CanvasPanel = ({ title, steps, onClose, version, onSaveNote, saveSt
             ) : (
               <BookmarkPlus className="size-4" />
             )}
-            {saveState === 'saved' ? 'Đã lưu' : saveState === 'saving' ? 'Đang lưu…' : 'Lưu Note'}
+            {saveState === 'saved' ? 'Đã lưu' : saveState === 'saving' ? 'Đang lưu…' : 'Lưu ghi chú'}
           </button>
         )}
         <button

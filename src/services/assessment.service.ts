@@ -15,6 +15,10 @@ export interface AvailableAssessment {
 
 export type QuestionFormat = 'single_choice' | 'multi_choice' | 'true_false' | 'short_answer' | 'essay';
 
+/** Mirror AssessmentQuestionFormat.IsScored ở BE — sửa hai bên cùng lúc. */
+export const isScoredFormat = (format: QuestionFormat | string): boolean =>
+  format === 'single_choice' || format === 'multi_choice' || format === 'true_false';
+
 export interface AnswerOption {
   key: string;
   text: string;

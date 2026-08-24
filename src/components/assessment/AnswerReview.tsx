@@ -16,7 +16,7 @@ const isEssay = (a: AttemptAnswerResult) => a.questionFormat === 'essay';
 const StatusIcon = ({ answer }: { answer: AttemptAnswerResult }) => {
   if (isEssay(answer)) {
     return (
-      <span className="grid size-5 shrink-0 place-items-center rounded-full border border-navy/20 text-navy/40">
+      <span className="grid size-5 shrink-0 place-items-center rounded-full border border-navy/20 text-navy">
         <Minus className="size-3" />
       </span>
     );
@@ -60,10 +60,10 @@ export const AnswerReview = ({ answers }: { answers: AttemptAnswerResult[] }) =>
                   <span className="font-semibold">Câu {a.displayOrder}. </span>
                   <MathText>{a.content}</MathText>
                 </p>
-                <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-navy/45">
+                <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-navy">
                   {a.chapterName && <span>{a.chapterName}</span>}
                   {a.difficulty && <span>· {DIFFICULTY_VI[a.difficulty] ?? a.difficulty}</span>}
-                  {skipped && <span className="font-semibold text-navy/60">· Bỏ trống</span>}
+                  {skipped && <span className="font-semibold text-navy">· Bỏ trống</span>}
                 </p>
               </div>
               <ChevronDown className={`mt-0.5 size-4 shrink-0 text-navy/30 transition ${open ? 'rotate-180' : ''}`} />
@@ -74,8 +74,8 @@ export const AnswerReview = ({ answers }: { answers: AttemptAnswerResult[] }) =>
                 {a.answerOptions?.length ? (
                   <ul className="space-y-1.5">
                     {a.answerOptions.map((opt) => (
-                      <li key={opt.key} className="flex gap-2 text-[14px] text-navy/70">
-                        <span className="font-semibold text-navy/50">{opt.key}.</span>
+                      <li key={opt.key} className="flex gap-2 text-[14px] text-navy">
+                        <span className="font-semibold text-navy">{opt.key}.</span>
                         <MathText>{opt.text}</MathText>
                       </li>
                     ))}
@@ -83,16 +83,16 @@ export const AnswerReview = ({ answers }: { answers: AttemptAnswerResult[] }) =>
                 ) : null}
 
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <p className="text-[14px] text-navy/70">
+                  <p className="text-[14px] text-navy">
                     <span className="font-semibold text-navy">Bạn trả lời: </span>
                     {skipped ? (
-                      <span className="italic text-navy/45">không trả lời</span>
+                      <span className="italic text-navy">không trả lời</span>
                     ) : (
                       <MathText>{a.givenAnswer!}</MathText>
                     )}
                   </p>
                   {a.correctAnswer && (
-                    <p className="text-[14px] text-navy/70">
+                    <p className="text-[14px] text-navy">
                       <span className="font-semibold text-forest">Đáp án: </span>
                       <MathText>{a.correctAnswer}</MathText>
                     </p>
@@ -100,7 +100,7 @@ export const AnswerReview = ({ answers }: { answers: AttemptAnswerResult[] }) =>
                 </div>
 
                 {a.explanation && (
-                  <div className="rounded-xl border border-navy/10 bg-white px-4 py-3 text-[14px] leading-relaxed text-navy/75">
+                  <div className="rounded-xl border border-navy/10 bg-white px-4 py-3 text-[14px] leading-relaxed text-navy">
                     <MathText>{a.explanation}</MathText>
                   </div>
                 )}

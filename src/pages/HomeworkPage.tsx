@@ -18,6 +18,8 @@ import { getHistoryItem } from '../services/history.service';
 import { createNote } from '../services/notes.service';
 import { savePendingPrompt, takePendingPrompt } from '../services/auth.service';
 import { useCanvasStore } from '../stores/canvasStore';
+import { useProficiency } from '../hooks/useProficiency';
+import { PersonalizationChip } from '../components/homework/PersonalizationChip';
 
 const SAMPLES: { label: string; math: string; text: string }[] = [
   { label: 'Giải phương trình', math: 'x^2 - 5x + 6 = 0', text: 'Giải phương trình x² - 5x + 6 = 0' },
@@ -36,6 +38,7 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
   // HomeworkPage giờ LUÔN mounted (không nằm dưới route :chatId) → lấy chatId từ path.
   const chatId = location.pathname.startsWith('/c/') ? decodeURIComponent(location.pathname.slice(3)) : undefined;
   const { user, login } = useAuth();
+  const proficiency = useProficiency();
 
   const [noteSaveState, setNoteSaveState] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
 
@@ -101,7 +104,7 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
 
   const closeCanvas = useCallback(() => canvas.close(), [canvas.close]);
 
-  // Lưu version canvas đang xem thành Note (question_notes).
+  // Lưu version canvas đang xem thành ghi chú (question_notes).
   const saveNote = useCallback(async () => {
     const v = canvas.versions[canvas.current];
     if (!v) return;
@@ -290,6 +293,7 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
                       if (vi >= 0) canvas.goToVersion(vi);
                     }}
                     isActiveInPanel={panelOpen && currentVersion?.label === turn.question}
+                    sessionId={chatId ?? undefined}
                   />
                 ))}
               </div>
@@ -384,6 +388,11 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
         </div>
 
         <div>
+          {user && (
+            <div className="mb-3 flex justify-center">
+              <PersonalizationChip profile={proficiency} />
+            </div>
+          )}
           <ProblemComposer
             onSubmit={(p) => handleSend(p, false)}
             disabled={isStreaming}

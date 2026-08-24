@@ -1,4 +1,4 @@
-import type { SolutionStep, SolveChunk, SolveRequest, TopicClassification } from '../types/solve';
+import type { AnswerTrust, SolutionStep, SolveChunk, SolveRequest, TopicClassification } from '../types/solve';
 import { authHeader, BACKEND_URL } from './api.service';
 
 export interface StreamHandlers {
@@ -12,6 +12,7 @@ export interface StreamHandlers {
     steps?: SolutionStep[],
     messageId?: string,
     classification?: TopicClassification,
+    trust?: AnswerTrust,
   ) => void;
   onError: (error: Error) => void;
 }
@@ -94,7 +95,13 @@ export const streamSolve = (sessionId: string, body: SolveRequest, handlers: Str
           handlers.onSteps?.(chunk.steps);
         }
         if (chunk.done) {
-          handlers.onDone(accumulated, sessionId, chunk.steps_final, messageId, chunk.classification);
+          handlers.onDone(accumulated, sessionId, chunk.steps_final, messageId, chunk.classification, {
+            bankVerified: chunk.bank_verified,
+            ragUsed: chunk.rag_used,
+            verified: chunk.verified,
+            similarity: chunk.bank_similarity,
+            questionId: chunk.bank_question_id,
+          });
           return;
         }
       }

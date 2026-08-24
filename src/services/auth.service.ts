@@ -131,3 +131,80 @@ export const logout = async () => {
   localStorage.removeItem(USER_LOCAL_STORAGE_KEY);
   window.location.reload();
 };
+
+/** Ghi token, giữ nguyên field cũ. */
+const saveSession = (accessToken: string, refreshToken?: string) => {
+  const existing = readLocalFallback() ?? {};
+  localStorage.setItem(USER_LOCAL_STORAGE_KEY, JSON.stringify({ ...existing, accessToken, refreshToken }));
+};
+
+export interface LoginOutcome {
+  user?: AuthUser | null;
+  /** Chưa xác thực SĐT thì BE không cấp token. */
+  requiresPhoneVerification?: boolean;
+  phone?: string;
+}
+
+/** Ném thẳng message tiếng Việt của BE cho modal hiện. */
+const postAuth = async (path: string, body: unknown): Promise<Record<string, unknown>> => {
+  const response = await fetch(`${BACKEND_URL}/api/auth/${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const text = await response.text();
+  const payload = text ? (JSON.parse(text) as Record<string, unknown>) : {};
+
+  if (!response.ok) {
+    const message = (payload.message ?? payload.errorMessage) as string | undefined;
+    throw new Error(message || 'Đăng nhập thất bại. Bạn kiểm tra lại thông tin nhé.');
+  }
+
+  return payload;
+};
+
+/** Đăng nhập bằng email, SĐT hoặc tên đăng nhập. */
+export const loginWithPassword = async (emailOrPhone: string, password: string): Promise<LoginOutcome> => {
+  const payload = await postAuth('login', { emailOrPhone, password });
+  const content = (payload.content ?? {}) as Record<string, unknown>;
+
+  // Cờ này đi kèm 200, không phải lỗi.
+  if (content.requiresPhoneVerification) {
+    return { requiresPhoneVerification: true, phone: content.phone as string | undefined };
+  }
+
+  const token = content.token as string | undefined;
+  if (!token) throw new Error('Máy chủ không trả về phiên đăng nhập. Bạn thử lại nhé.');
+
+  saveSession(token, content.refreshToken as string | undefined);
+  return { user: await fetchCurrentUser() };
+};
+
+/** Đăng nhập Google — /auth/google trả object thô, không bọc content. */
+export const loginWithGoogle = async (idToken: string): Promise<LoginOutcome> => {
+  const payload = await postAuth('google', { idToken });
+
+  const accessToken = payload.accessToken as string | undefined;
+  if (accessToken) {
+    saveSession(accessToken, payload.refreshToken as string | undefined);
+    return { user: await fetchCurrentUser() };
+  }
+
+  if (payload.requiresRoleSelection || payload.requiresPhoneInput) {
+    // Chọn vai trò + OTP chỉ web chính có.
+    throw new Error('Tài khoản Google này chưa hoàn tất đăng ký. Bạn hoàn tất ở trang chủ Tutora rồi quay lại nhé.');
+  }
+
+  throw new Error((payload.message as string) || 'Đăng nhập Google thất bại.');
+};
+
+/** Đăng ký ở web chính, mở tab mới. */
+export const openRegisterPage = () => {
+  window.open(`${WEB_URL}/register`, '_blank', 'noopener');
+};
+
+export const openForgotPasswordPage = () => {
+  window.open(`${WEB_URL}/login`, '_blank', 'noopener');
+};
