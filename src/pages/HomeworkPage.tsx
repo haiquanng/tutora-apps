@@ -104,7 +104,7 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
 
   const closeCanvas = useCallback(() => canvas.close(), [canvas.close]);
 
-  // Lưu version canvas đang xem thành Note (question_notes).
+  // Lưu version canvas đang xem thành ghi chú (question_notes).
   const saveNote = useCallback(async () => {
     const v = canvas.versions[canvas.current];
     if (!v) return;
@@ -293,6 +293,7 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
                       if (vi >= 0) canvas.goToVersion(vi);
                     }}
                     isActiveInPanel={panelOpen && currentVersion?.label === turn.question}
+                    sessionId={chatId ?? undefined}
                   />
                 ))}
               </div>

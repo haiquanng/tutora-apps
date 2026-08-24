@@ -2,6 +2,7 @@ import { Loader2, PanelRight } from 'lucide-react';
 import { Markdown } from './Markdown';
 import { ThinkingBlock } from './ThinkingBlock';
 import { AnswerTrustBadge } from './AnswerTrustBadge';
+import { PracticeCard } from './PracticeCard';
 import { VoteButtons } from '../ui/VoteButtons';
 import { MESSAGE_REASONS, voteMessage } from '../../services/feedback.service';
 import type { ChatTurn } from '../../types/solve';
@@ -10,9 +11,10 @@ interface Props {
   turn: ChatTurn;
   onOpenCanvas: (turn: ChatTurn) => void;
   isActiveInPanel?: boolean;
+  sessionId?: string;
 }
 
-export const ChatTurnView = ({ turn, onOpenCanvas, isActiveInPanel }: Props) => {
+export const ChatTurnView = ({ turn, onOpenCanvas, isActiveInPanel, sessionId }: Props) => {
   const hasSteps = turn.steps.length > 0;
 
   return (
@@ -62,6 +64,10 @@ export const ChatTurnView = ({ turn, onOpenCanvas, isActiveInPanel }: Props) => 
           )}
           <AnswerTrustBadge trust={turn.trust} />
         </div>
+      )}
+
+      {!turn.isStreaming && turn.answer && turn.classification?.chapter && (
+        <PracticeCard chapter={turn.classification.chapter} questionText={turn.question} sessionId={sessionId} />
       )}
 
       {turn.isStreaming && (
