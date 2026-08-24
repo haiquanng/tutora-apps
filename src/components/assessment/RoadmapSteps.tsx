@@ -26,14 +26,9 @@ export const RoadmapSteps = ({
           </span>
 
           <div className="rounded-xl border border-navy/10 bg-white p-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="font-serif text-[17px] text-navy">{step.chapter}</h3>
-              {step.estimatedSessions ? (
-                <span className="rounded-md bg-cream-light px-2 py-0.5 text-[11px] font-semibold text-navy">
-                  ~{step.estimatedSessions} buổi
-                </span>
-              ) : null}
-            </div>
+            {/* Không hiện estimatedSessions: AI đoán "~2 buổi" từ một bài 10 câu, con số
+                đó không có cơ sở khách quan nào. */}
+            <h3 className="font-serif text-[17px] text-navy">{step.chapter}</h3>
 
             {step.goal && (
               <p className="mt-2 flex items-start gap-1.5 text-[15px] leading-relaxed text-navy">
