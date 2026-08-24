@@ -57,7 +57,7 @@ export const StudyResourcePage = () => {
   const detailBase = `/resources/${subjectSlug}${chapterSlug ? `/${chapterSlug}` : ''}`;
 
   return (
-    <div className="mx-auto w-full max-w-(--breakpoint-2xl) px-4 py-8">
+    <div className="mx-auto w-full max-w-6xl px-4 py-8">
       {/* Breadcrumb */}
       <nav className="mb-4 flex flex-wrap items-center gap-1 text-sm text-navy/50">
         <Link to="/resources" className="hover:text-navy">

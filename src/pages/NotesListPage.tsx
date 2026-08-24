@@ -21,7 +21,7 @@ interface Props {
   onNotesChange?: () => void;
 }
 
-/** Trang danh sách Note (/notes): list -> click mở detail /notes/:id. Giống trang Lịch sử. */
+/** Trang danh sách ghi chú (/notes): list -> click mở detail /notes/:id. Giống trang Lịch sử. */
 export const NotesListPage = ({ onNotesChange }: Props) => {
   const [notes, setNotes] = useState<QuestionNote[]>([]);
   const [isLoading, setLoading] = useState(true);
@@ -82,7 +82,7 @@ export const NotesListPage = ({ onNotesChange }: Props) => {
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-(--breakpoint-2xl) px-4 py-8">
-        <h1 className="mb-6 font-serif text-2xl font-bold">Note của tôi</h1>
+        <h1 className="mb-6 font-serif text-2xl font-bold">Ghi chú của tôi</h1>
         <ul className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
             <li key={i} className="flex items-center gap-3 rounded-2xl border border-navy/10 bg-white p-3">
@@ -102,15 +102,15 @@ export const NotesListPage = ({ onNotesChange }: Props) => {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
         <Bookmark className="size-10 text-navy/20" />
-        <h2 className="mt-4 font-serif text-xl font-semibold">Chưa có note nào</h2>
-        <p className="mt-1 text-navy/50">Mở lời giải từng bước rồi bấm “Lưu Note” để lưu lại đây.</p>
+        <h2 className="mt-4 font-serif text-xl font-semibold">Chưa có ghi chú nào</h2>
+        <p className="mt-1 text-navy/50">Mở lời giải từng bước rồi bấm “Lưu ghi chú” để lưu lại đây.</p>
       </div>
     );
   }
 
   return (
     <div className="mx-auto w-full max-w-(--breakpoint-2xl) flex-1 overflow-y-auto px-4 py-8">
-      <h1 className="mb-4 font-serif text-2xl font-bold">Note của tôi</h1>
+      <h1 className="mb-4 font-serif text-2xl font-bold">Ghi chú của tôi</h1>
 
       <div className="mb-5 flex flex-wrap items-center gap-2">
         <div className="relative min-w-0 flex-1 sm:max-w-xs">
@@ -184,7 +184,7 @@ export const NotesListPage = ({ onNotesChange }: Props) => {
                 type="button"
                 onClick={() => setPendingDelete(note.noteId)}
                 className="cursor-pointer rounded-lg p-2 text-navy/30 opacity-0 transition hover:text-burgundy group-hover:opacity-100"
-                aria-label="Xoá note này"
+                aria-label="Xoá ghi chú này"
               >
                 <Trash2 className="size-4" />
               </button>
@@ -196,8 +196,8 @@ export const NotesListPage = ({ onNotesChange }: Props) => {
       <ConfirmDialog
         open={pendingDelete !== null}
         danger
-        title="Xoá note này?"
-        message="Note sẽ bị xoá và không khôi phục được."
+        title="Xoá ghi chú này?"
+        message="Ghi chú sẽ bị xoá và không khôi phục được."
         confirmLabel="Xoá"
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}

@@ -29,7 +29,7 @@ interface Props {
   aiBalance: number | null;
   isOpen: boolean;
   onClose: () => void;
-  // Lịch sử chat (chat_sessions) — mở lại ở /c/:id. Note có TRANG RIÊNG /notes (list→detail).
+  // Lịch sử chat (chat_sessions) — mở lại ở /c/:id. Ghi chú có TRANG RIÊNG /notes (list→detail).
   history: HistoryItem[];
   historyLoading: boolean;
   onDeleteHistory: (id: string) => void;
@@ -234,10 +234,10 @@ export const Sidebar = ({ aiBalance, isOpen, onClose, history, historyLoading, o
                 to="/notes"
                 onClick={closeFlyout}
                 className={linkClass(collapsed)}
-                title={collapsed ? 'Note của tôi' : undefined}
+                title={collapsed ? 'Ghi chú của tôi' : undefined}
               >
                 <Bookmark className="size-[18px] shrink-0" />
-                {!collapsed && 'Note của tôi'}
+                {!collapsed && 'Ghi chú của tôi'}
               </NavLink>
             </li>
 
