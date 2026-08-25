@@ -1,5 +1,4 @@
 import { ArrowUpRight, BadgeCheck, BookCheck, Calculator, HelpCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import type { AnswerTrust } from '../../types/solve';
 
 /**
@@ -70,12 +69,14 @@ export const AnswerTrustBadge = ({ trust }: { trust?: AnswerTrust }) => {
   }
 
   return (
-    <Link
-      to={`/resources/toan-hoc/q/${sourceId}`}
+    <a
+      href={`/resources/toan-hoc/q/${sourceId}`}
+      target="_blank"
+      rel="noopener noreferrer"
       title={`${hint} Bấm để mở bài gốc.`}
       className={`${base} cursor-pointer transition hover:border-gold`}
     >
       {body}
-    </Link>
+    </a>
   );
 };
