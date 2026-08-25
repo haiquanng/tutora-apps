@@ -35,7 +35,7 @@ const HomeworkPane = ({ onSolved }: { onSolved: () => void }) => {
 
 const App = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(() => window.matchMedia(DESKTOP_QUERY).matches);
-  const { balance: aiBalance, onSpent: onCreditSpent } = useAiBalance();
+  const { balance: aiBalance, nextExpiryAt, expiringAmount, onSpent: onCreditSpent } = useAiBalance();
   const { items: history, isLoading: historyLoading, reload: reloadHistory, remove: removeHistory } = useHistory();
 
   useEffect(() => {
@@ -77,6 +77,8 @@ const App = () => {
                 <Header aiBalance={aiBalance} onToggleSidebar={() => setSidebarOpen((v) => !v)} />
                 <Sidebar
                   aiBalance={aiBalance}
+                  nextExpiryAt={nextExpiryAt}
+                  expiringAmount={expiringAmount}
                   isOpen={isSidebarOpen}
                   onClose={() => setSidebarOpen(false)}
                   history={history}

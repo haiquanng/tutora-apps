@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, Check, Clock, Loader2, Sparkles } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { QrPaymentModal } from '../components/upgrade/QrPaymentModal';
 import {
@@ -65,9 +65,13 @@ export const UpgradePage = () => {
 
   const handlePaid = () => {
     const credited = modalPkg?.creditAmount;
+    const months = modalPkg?.expiryMonths;
     setModalPkg(null);
     setPurchase(null);
-    toast.success(`Thanh toán thành công! Đã cộng ${credited?.toLocaleString('vi-VN')} lượt vào tài khoản.`);
+    toast.success(
+      `Thanh toán thành công! Đã cộng ${credited?.toLocaleString('vi-VN')} lượt vào tài khoản.` +
+        (months && months > 0 ? ` Dùng trong ${months} tháng.` : ''),
+    );
   };
 
   return (
@@ -119,7 +123,14 @@ export const UpgradePage = () => {
                       <span className="text-4xl font-semibold text-navy">{formatVnd(pkg.price)}</span>
                       <span className="text-sm text-navy/40">/ một lần</span>
                     </div>
-                    <p className="mt-1 text-sm text-navy/50">{pkg.creditAmount.toLocaleString('vi-VN')} lượt hỏi AI</p>
+                    <p className="mt-1 text-sm text-navy/50">
+                      {pkg.creditAmount.toLocaleString('vi-VN')} lượt hỏi AI
+                      {!!pkg.expiryMonths && pkg.expiryMonths > 0 && (
+                        <span className="mt-0.5 block text-[13px] text-navy/45">
+                          Dùng trong {pkg.expiryMonths} tháng kể từ ngày mua
+                        </span>
+                      )}
+                    </p>
 
                     <button
                       type="button"
@@ -145,6 +156,13 @@ export const UpgradePage = () => {
                             <span>{perk}</span>
                           </li>
                         ))}
+
+                        {!!pkg.expiryMonths && pkg.expiryMonths > 0 && (
+                          <li className="flex items-start gap-2.5 text-[15px] text-navy/70">
+                            <Clock className="mt-0.5 size-4 shrink-0 text-navy/40" />
+                            <span>Hiệu lực {pkg.expiryMonths} tháng kể từ ngày mua</span>
+                          </li>
+                        )}
                       </ul>
                     </div>
                   )}

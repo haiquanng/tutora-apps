@@ -1,5 +1,5 @@
 import { Loader2, PanelRight } from 'lucide-react';
-import { Markdown } from './Markdown';
+import { SteppedMarkdown } from './SteppedMarkdown';
 import { ThinkingBlock } from './ThinkingBlock';
 import { AnswerTrustBadge } from './AnswerTrustBadge';
 import { PracticeCard } from './PracticeCard';
@@ -12,9 +12,10 @@ interface Props {
   onOpenCanvas: (turn: ChatTurn) => void;
   isActiveInPanel?: boolean;
   sessionId?: string;
+  onAskStep?: (question: string) => void;
 }
 
-export const ChatTurnView = ({ turn, onOpenCanvas, isActiveInPanel, sessionId }: Props) => {
+export const ChatTurnView = ({ turn, onOpenCanvas, isActiveInPanel, sessionId, onAskStep }: Props) => {
   const hasSteps = turn.steps.length > 0;
 
   return (
@@ -30,8 +31,7 @@ export const ChatTurnView = ({ turn, onOpenCanvas, isActiveInPanel, sessionId }:
 
       {turn.thinking && <ThinkingBlock thinking={turn.thinking} isStreaming={turn.isStreaming} />}
 
-      {/* Trả lời của Tutora — luôn là hội thoại thật, canvas chỉ THÊM VÀO, không thay thế. */}
-      {turn.answer && <Markdown>{turn.answer}</Markdown>}
+      {turn.answer && <SteppedMarkdown content={turn.answer} onAskStep={onAskStep} disabled={turn.isStreaming} />}
 
       {hasSteps &&
         // Panel đã đang mở sẵn cho đúng turn này -> khỏi nhắc lại, tránh nhiễu UI.
