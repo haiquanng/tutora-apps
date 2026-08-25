@@ -294,6 +294,7 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
                     }}
                     isActiveInPanel={panelOpen && currentVersion?.label === turn.question}
                     sessionId={chatId ?? undefined}
+                    onAskStep={(q) => void session.sendFollowUp(q)}
                   />
                 ))}
               </div>
