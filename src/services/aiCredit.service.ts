@@ -12,10 +12,14 @@ export interface AiCreditPackage {
   sortOrder: number;
   description?: string | null;
   iconUrl?: string | null;
+  /** Số tháng credit hết hạn kể từ ngày mua. */
+  expiryMonths?: number;
 }
 
 export interface AiCreditBalance {
   balance: number;
+  nextExpiryAt?: string | null;
+  expiringAmount?: number;
 }
 
 export interface AiCreditPurchase {

@@ -27,6 +27,8 @@ const linkClass =
 
 interface Props {
   aiBalance: number | null;
+  nextExpiryAt?: string | null;
+  expiringAmount?: number;
   isOpen: boolean;
   onClose: () => void;
   // Lịch sử chat (chat_sessions) — mở lại ở /c/:id. Ghi chú có TRANG RIÊNG /notes (list→detail).
@@ -37,7 +39,16 @@ interface Props {
 
 const DESKTOP_QUERY = '(min-width: 1024px)'; // = breakpoint lg của Tailwind
 
-export const Sidebar = ({ aiBalance, isOpen, onClose, history, historyLoading, onDeleteHistory }: Props) => {
+export const Sidebar = ({
+  aiBalance,
+  nextExpiryAt,
+  expiringAmount,
+  isOpen,
+  onClose,
+  history,
+  historyLoading,
+  onDeleteHistory,
+}: Props) => {
   const [isResourcesOpen, setResourcesOpen] = useState(false);
   const [anchor, setAnchor] = useState({ left: 0, top: 0 });
   const [isDesktop, setDesktop] = useState(() => window.matchMedia(DESKTOP_QUERY).matches);
@@ -274,7 +285,7 @@ export const Sidebar = ({ aiBalance, isOpen, onClose, history, historyLoading, o
 
         {!collapsed && (
           <div className="shrink-0 space-y-2 p-3">
-            <UsagePanel aiBalance={aiBalance} />
+            <UsagePanel aiBalance={aiBalance} nextExpiryAt={nextExpiryAt} expiringAmount={expiringAmount} />
             <NavLink
               to="/upgrade"
               onClick={() => !isDesktop && onClose()}
