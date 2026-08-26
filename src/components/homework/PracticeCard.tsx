@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Dumbbell, ExternalLink, Loader2 } from 'lucide-react';
 import { MathText } from '../ui/MathText';
 import { Markdown } from './Markdown';
-import { fetchNextPractice, submitPractice } from '../../services/practice.service';
-import type { PracticeQuestion, SelfAssessment } from '../../services/practice.service';
+import { fetchNextPractice } from '../../services/practice.service';
+// import { submitPractice } from '../../services/practice.service';
+import type { PracticeQuestion } from '../../services/practice.service';
+// import type { SelfAssessment } from '../../services/practice.service';
 
 const DIFFICULTY_VI: Record<string, string> = {
   NHAN_BIET: 'Nhận biết',
@@ -12,12 +14,11 @@ const DIFFICULTY_VI: Record<string, string> = {
   VAN_DUNG_CAO: 'Vận dụng cao',
 };
 
-// Hai lựa chọn thôi: "đúng một phần" khiến học sinh phải cân nhắc, mà sắc thái đó
-// không dùng vào việc gì.
-const SELF_OPTIONS: { key: SelfAssessment; label: string; className: string }[] = [
-  { key: 'correct', label: 'Em giải được', className: 'border-emerald-600/40 text-emerald-700 hover:bg-emerald-50' },
-  { key: 'wrong', label: 'Chưa giải được', className: 'border-burgundy/40 text-burgundy hover:bg-burgundy/5' },
-];
+// Bỏ bước tự chấm: xem lời giải xong là đủ, hỏi thêm chỉ làm dài luồng.
+// const SELF_OPTIONS: { key: SelfAssessment; label: string; className: string }[] = [
+//   { key: 'correct', label: 'Em giải được', className: 'border-emerald-600/40 text-emerald-700 hover:bg-emerald-50' },
+//   { key: 'wrong', label: 'Chưa giải được', className: 'border-burgundy/40 text-burgundy hover:bg-burgundy/5' },
+// ];
 
 interface Props {
   /** Chương của bài vừa giải. */
@@ -30,10 +31,12 @@ interface Props {
 /**
  * Mời luyện 1 câu TỰ LUẬN cùng chương sau khi giải xong.
  */
-export const PracticeCard = ({ chapter, questionText, sessionId }: Props) => {
+// sessionId chỉ phục vụ submitPractice — giữ trong Props, bỏ destructure cho hết unused.
+// export const PracticeCard = ({ chapter, questionText, sessionId }: Props) => {
+export const PracticeCard = ({ chapter, questionText }: Props) => {
   const [question, setQuestion] = useState<PracticeQuestion | null>(null);
   const [showSolution, setShowSolution] = useState(false);
-  const [isAssessed, setAssessed] = useState(false);
+  // const [isAssessed, setAssessed] = useState(false);
   const [isLoading, setLoading] = useState(false);
   const [isDone, setDone] = useState(false);
 
@@ -45,21 +48,21 @@ export const PracticeCard = ({ chapter, questionText, sessionId }: Props) => {
     else setQuestion(q);
   };
 
-  const assess = async (selfAssessment: SelfAssessment) => {
-    if (!question) return;
-    setLoading(true);
-    try {
-      await submitPractice({ questionId: question.questionId, selfAssessment, sourceSessionId: sessionId });
-      setAssessed(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const assess = async (selfAssessment: SelfAssessment) => {
+  //   if (!question) return;
+  //   setLoading(true);
+  //   try {
+  //     await submitPractice({ questionId: question.questionId, selfAssessment, sourceSessionId: sessionId });
+  //     setAssessed(true);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const next = () => {
     setQuestion(null);
     setShowSolution(false);
-    setAssessed(false);
+    // setAssessed(false);
     void start();
   };
 
@@ -121,18 +124,28 @@ export const PracticeCard = ({ chapter, questionText, sessionId }: Props) => {
             <p className="text-sm text-navy/60">Bài này chưa có lời giải mẫu.</p>
           )}
 
-          {/* Tab mới: đang luyện dở mà điều hướng đi là mất cả phiên chat. */}
-          <a
-            href={`/resources/toan-hoc/q/${question.questionId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-burgundy underline-offset-2 hover:underline"
-          >
-            Mở bài đầy đủ
-            <ExternalLink className="size-3.5" />
-          </a>
+          <div className="flex flex-wrap items-center gap-3 border-t border-navy/8 pt-3">
+            {/* Tab mới: đang luyện dở mà điều hướng đi là mất cả phiên chat. */}
+            <a
+              href={`/resources/toan-hoc/q/${question.questionId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-burgundy underline-offset-2 hover:underline"
+            >
+              Mở bài đầy đủ
+              <ExternalLink className="size-3.5" />
+            </a>
 
-          {/* Học sinh tự chấm — không có đáp án máy nên không thể chấm oan. */}
+            <button
+              type="button"
+              onClick={next}
+              className="ml-auto cursor-pointer rounded-xl border border-navy/15 px-4 py-2 text-sm font-semibold text-navy transition hover:border-gold hover:bg-cream-light"
+            >
+              Bài khác
+            </button>
+          </div>
+
+          {/* Bỏ bước học sinh tự chấm — giữ code phòng khi cần bật lại.
           {!isAssessed ? (
             <div className="border-t border-navy/8 pt-3">
               <p className="mb-2 text-sm font-medium text-navy">Đối chiếu xong, em thấy mình làm thế nào?</p>
@@ -161,6 +174,7 @@ export const PracticeCard = ({ chapter, questionText, sessionId }: Props) => {
               </button>
             </div>
           )}
+          */}
         </div>
       )}
     </div>
