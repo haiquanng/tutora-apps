@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog';
-import { GoogleSignInButton } from './GoogleSignInButton';
+// import { GoogleSignInButton } from './GoogleSignInButton';
 import {
-  loginWithGoogle,
+  // loginWithGoogle,
   loginWithPassword,
   openForgotPasswordPage,
   openRegisterPage,
@@ -65,18 +65,19 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }: Props) => {
     }
   };
 
-  const handleGoogle = async (idToken: string) => {
-    setError(null);
-    setSubmitting(true);
-    try {
-      const result = await loginWithGoogle(idToken);
-      finish(result.user ?? null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Đăng nhập Google thất bại.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  // Bỏ đăng nhập Google khỏi modal — giữ code phòng khi cần bật lại.
+  // const handleGoogle = async (idToken: string) => {
+  //   setError(null);
+  //   setSubmitting(true);
+  //   try {
+  //     const result = await loginWithGoogle(idToken);
+  //     finish(result.user ?? null);
+  //   } catch (err) {
+  //     setError(err instanceof Error ? err.message : 'Đăng nhập Google thất bại.');
+  //   } finally {
+  //     setSubmitting(false);
+  //   }
+  // };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -133,6 +134,7 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }: Props) => {
           </button>
         </form>
 
+        {/* Bỏ đăng nhập Google — giữ code phòng khi cần bật lại.
         <div className="my-4 flex items-center gap-3 text-xs text-navy/35">
           <span className="h-px flex-1 bg-navy/10" />
           hoặc
@@ -140,6 +142,7 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }: Props) => {
         </div>
 
         <GoogleSignInButton onCredential={handleGoogle} disabled={isSubmitting} />
+        */}
 
         {/* Đăng ký cần vai trò + OTP, để web chính lo. */}
         <p className="mt-4 text-center text-sm text-navy/50">
