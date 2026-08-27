@@ -10,9 +10,13 @@ type Verdict = 'solid' | 'shaky' | 'gap';
  * khi còn câu sai để không tô hồng.
  */
 const verdictOf = (item: ChapterMastery): Verdict => {
-  if (item.verdict) return item.verdict;
-  if (item.total > 0 && item.correct === item.total) return 'solid';
-  return item.correct > 0 ? 'shaky' : 'gap';
+  // AI đôi khi trả verdict lạ ('weak', 'strong', chuỗi tiếng Việt...) -> chỉ nhận 3 mức hợp lệ,
+  // còn lại suy từ correct/total để không rơi vào nhóm không tồn tại.
+  if (item.verdict && item.verdict in VERDICT) return item.verdict;
+  const total = Number(item.total) || 0;
+  const correct = Number(item.correct) || 0;
+  if (total > 0 && correct === total) return 'solid';
+  return correct > 0 ? 'shaky' : 'gap';
 };
 
 const VERDICT: Record<Verdict, { label: string; group: string; node: string; dot: string; edge: string }> = {
@@ -116,8 +120,9 @@ export const RoadmapMindmap = ({
 }) => {
   const grouped = useMemo(() => {
     const map = new Map<Verdict, ChapterMastery[]>(GROUPS.map((v) => [v, []]));
-    analysis.chapter_mastery.forEach((item) => map.get(verdictOf(item))!.push(item));
-    return GROUPS.map((verdict) => ({ verdict, items: map.get(verdict)! })).filter((g) => g.items.length > 0);
+    const list = Array.isArray(analysis.chapter_mastery) ? analysis.chapter_mastery : [];
+    list.forEach((item) => map.get(verdictOf(item))?.push(item));
+    return GROUPS.map((verdict) => ({ verdict, items: map.get(verdict) ?? [] })).filter((g) => g.items.length > 0);
   }, [analysis.chapter_mastery]);
 
   const { nodes, edges } = useMemo(() => {
