@@ -130,10 +130,12 @@ export interface ImproveItem {
  * Mức thông thạo 1 chương. CỐ Ý không có thang %/điểm số: đề ít câu nên phần trăm
  * tạo cảm giác chính xác giả (2/3 câu không phải "thông thạo 67%"). Chỉ 3 mức verdict.
  */
+export type Verdict = 'solid' | 'shaky' | 'gap';
+
 export interface ChapterMastery extends ChapterNote {
   correct: number;
   total: number;
-  verdict?: 'solid' | 'shaky' | 'gap';
+  verdict?: Verdict;
   summary?: string;
   improve?: ImproveItem[];
 }
@@ -216,6 +218,50 @@ export const parseProfile = (profile: ProficiencyProfile): Analysis => {
   };
 };
 
+/**
+ * Verdict do AI sinh trong JSON tự do nên KHÔNG tin được là 1 trong 3 mức: từng gặp
+ * 'weak'/'strong'/'Gap'/nhãn tiếng Việt. Quy về đúng 3 mức ngay tại chỗ parse để UI
+ * không phải tự đoán (và không index vào bảng màu bằng key không tồn tại).
+ */
+const VERDICT_ALIAS: Record<string, Verdict> = {
+  solid: 'solid',
+  strong: 'solid',
+  good: 'solid',
+  mastered: 'solid',
+  shaky: 'shaky',
+  medium: 'shaky',
+  moderate: 'shaky',
+  partial: 'shaky',
+  gap: 'gap',
+  weak: 'gap',
+  poor: 'gap',
+  missing: 'gap',
+};
+
+/** Verdict hợp lệ, hoặc undefined để UI suy từ correct/total. */
+export const parseVerdict = (raw: unknown): Verdict | undefined =>
+  typeof raw === 'string' ? VERDICT_ALIAS[raw.trim().toLowerCase()] : undefined;
+
+/**
+ * Mức thông thạo dùng chung cho mindmap và panel chi tiết: verdict AI nếu hợp lệ,
+ * không thì suy từ số câu đúng thật. Ưu tiên "chưa chắc" khi còn câu sai để không tô hồng.
+ */
+export const verdictOf = (item: ChapterMastery): Verdict => {
+  const fromAi = parseVerdict(item.verdict);
+  if (fromAi) return fromAi;
+  const total = Number(item.total) || 0;
+  const correct = Number(item.correct) || 0;
+  if (total > 0 && correct === total) return 'solid';
+  return correct > 0 ? 'shaky' : 'gap';
+};
+
+const normalizeMastery = (raw: unknown): ChapterMastery[] =>
+  Array.isArray(raw)
+    ? raw
+        .filter((item): item is ChapterMastery => !!item && typeof item === 'object')
+        .map((item) => ({ ...item, verdict: parseVerdict(item.verdict) }))
+    : [];
+
 /** Analysis đầy đủ từ attempt.analysisResult (có chapter_mastery cho mindmap). */
 export const parseAnalysisResult = (raw: string | null): Analysis | null => {
   if (!raw) return null;
@@ -228,7 +274,7 @@ export const parseAnalysisResult = (raw: string | null): Analysis | null => {
       confidence: parsed.confidence ?? null,
       strengths: parsed.strengths ?? [],
       weaknesses: parsed.weaknesses ?? [],
-      chapter_mastery: parsed.chapter_mastery ?? [],
+      chapter_mastery: normalizeMastery(parsed.chapter_mastery),
       recommended_path: parsed.recommended_path ?? [],
       next_action: parsed.next_action ?? null,
     };

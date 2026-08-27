@@ -1,23 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { Background, Controls, Handle, Position, ReactFlow, type Edge, type Node, type NodeProps } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import type { Analysis, ChapterMastery } from '../../services/assessment.service';
-
-type Verdict = 'solid' | 'shaky' | 'gap';
-
-/**
- * Suy verdict khi AI không trả. CỐ Ý không quy ra %: chỉ 3 mức, ưu tiên "chưa chắc"
- * khi còn câu sai để không tô hồng.
- */
-const verdictOf = (item: ChapterMastery): Verdict => {
-  // AI đôi khi trả verdict lạ ('weak', 'strong', chuỗi tiếng Việt...) -> chỉ nhận 3 mức hợp lệ,
-  // còn lại suy từ correct/total để không rơi vào nhóm không tồn tại.
-  if (item.verdict && item.verdict in VERDICT) return item.verdict;
-  const total = Number(item.total) || 0;
-  const correct = Number(item.correct) || 0;
-  if (total > 0 && correct === total) return 'solid';
-  return correct > 0 ? 'shaky' : 'gap';
-};
+import { verdictOf, type Analysis, type ChapterMastery, type Verdict } from '../../services/assessment.service';
 
 const VERDICT: Record<Verdict, { label: string; group: string; node: string; dot: string; edge: string }> = {
   gap: {

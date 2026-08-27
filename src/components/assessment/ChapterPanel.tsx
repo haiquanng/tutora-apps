@@ -3,18 +3,12 @@ import { ArrowRight, Dumbbell, Loader2, X } from 'lucide-react';
 import { MathText } from '../ui/MathText';
 import { useSubjects } from '../../hooks/useSubjects';
 import { fetchQuestions, type PublicQuestion } from '../../services/questions.service';
-import type { ChapterMastery } from '../../services/assessment.service';
+import { verdictOf, type ChapterMastery, type Verdict } from '../../services/assessment.service';
 
-const VERDICT: Record<string, { text: string; chip: string }> = {
+const VERDICT: Record<Verdict, { text: string; chip: string }> = {
   gap: { text: 'Đang hổng', chip: 'border-burgundy/30 bg-burgundy/8 text-burgundy' },
   shaky: { text: 'Chưa chắc', chip: 'border-gold/60 bg-gold/15 text-navy' },
   solid: { text: 'Đã vững', chip: 'border-forest/30 bg-forest/10 text-forest' },
-};
-
-const verdictOf = (c: ChapterMastery): string => {
-  if (c.verdict) return c.verdict;
-  if (c.total > 0 && c.correct === c.total) return 'solid';
-  return c.correct > 0 ? 'shaky' : 'gap';
 };
 
 const PREVIEW = 4;
