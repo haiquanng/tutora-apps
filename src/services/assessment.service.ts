@@ -195,33 +195,35 @@ export const runAnalysis = async (attemptId: string): Promise<Analysis | null> =
   return parseAnalysisResult(res?.analysis ?? null);
 };
 
-/** Profile -> Analysis khi không có analysisResult (mindmap thiếu chapter_mastery). */
-export const parseProfile = (profile: ProficiencyProfile): Analysis => {
-  const read = <T>(raw: string | null, fallback: T): T => {
-    if (!raw) return fallback;
-    try {
-      return (JSON.parse(raw) ?? fallback) as T;
-    } catch {
-      return fallback;
-    }
-  };
+/*
+ * Chuẩn hoá JSON do AI (Gemini) sinh
+ */
 
-  return {
-    level: profile.level,
-    summary: profile.summary ?? '',
-    confidence: null,
-    strengths: read<ChapterNote[]>(profile.strengths, []),
-    weaknesses: read<Weakness[]>(profile.weaknesses, []),
-    chapter_mastery: [],
-    recommended_path: read<PathStep[]>(profile.recommendedPath, []),
-    next_action: null,
-  };
+const asArray = (raw: unknown): unknown[] => (Array.isArray(raw) ? raw : []);
+const isRecord = (raw: unknown): raw is Record<string, unknown> =>
+  !!raw && typeof raw === 'object' && !Array.isArray(raw);
+
+/** Chuỗi không rỗng, hoặc undefined. Số/null từ AI cũng bị loại. */
+const asText = (raw: unknown): string | undefined => {
+  if (typeof raw !== 'string') return undefined;
+  const text = raw.trim();
+  return text || undefined;
+};
+
+const asNumber = (raw: unknown): number => {
+  const num = Number(raw);
+  return Number.isFinite(num) ? num : 0;
+};
+
+/** Enum AI trả: khớp không phân biệt hoa thường, không khớp -> undefined. */
+const asEnum = <T extends string>(raw: unknown, allowed: readonly T[]): T | undefined => {
+  const text = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+  return allowed.find((v) => v === text);
 };
 
 /**
- * Verdict do AI sinh trong JSON tự do nên KHÔNG tin được là 1 trong 3 mức: từng gặp
- * 'weak'/'strong'/'Gap'/nhãn tiếng Việt. Quy về đúng 3 mức ngay tại chỗ parse để UI
- * không phải tự đoán (và không index vào bảng màu bằng key không tồn tại).
+ * Verdict từng gặp AI trả 'weak'/'strong'/'Gap'/nhãn lạ. Quy về đúng 3 mức ngay
+ * tại chỗ parse để UI không index bảng màu bằng key không tồn tại.
  */
 const VERDICT_ALIAS: Record<string, Verdict> = {
   solid: 'solid',
@@ -238,7 +240,6 @@ const VERDICT_ALIAS: Record<string, Verdict> = {
   missing: 'gap',
 };
 
-/** Verdict hợp lệ, hoặc undefined để UI suy từ correct/total. */
 export const parseVerdict = (raw: unknown): Verdict | undefined =>
   typeof raw === 'string' ? VERDICT_ALIAS[raw.trim().toLowerCase()] : undefined;
 
@@ -249,34 +250,121 @@ export const parseVerdict = (raw: unknown): Verdict | undefined =>
 export const verdictOf = (item: ChapterMastery): Verdict => {
   const fromAi = parseVerdict(item.verdict);
   if (fromAi) return fromAi;
-  const total = Number(item.total) || 0;
-  const correct = Number(item.correct) || 0;
-  if (total > 0 && correct === total) return 'solid';
-  return correct > 0 ? 'shaky' : 'gap';
+  if (item.total > 0 && item.correct === item.total) return 'solid';
+  return item.correct > 0 ? 'shaky' : 'gap';
 };
 
-const normalizeMastery = (raw: unknown): ChapterMastery[] =>
-  Array.isArray(raw)
-    ? raw
-        .filter((item): item is ChapterMastery => !!item && typeof item === 'object')
-        .map((item) => ({ ...item, verdict: parseVerdict(item.verdict) }))
-    : [];
+/** Chương không có tên thì bỏ hẳn: UI lấy tên làm tiêu đề và làm key. */
+const toChapterNote = (raw: unknown): ChapterNote | null => {
+  if (!isRecord(raw)) return null;
+  const chapter = asText(raw.chapter);
+  if (!chapter) return null;
+  return { chapter, chapterSlug: asText(raw.chapterSlug) ?? null, note: asText(raw.note) };
+};
+
+const toChapterNotes = (raw: unknown): ChapterNote[] =>
+  asArray(raw)
+    .map(toChapterNote)
+    .filter((item): item is ChapterNote => item !== null);
+
+const SEVERITIES = ['minor', 'moderate', 'critical'] as const;
+
+export const toWeaknesses = (raw: unknown): Weakness[] =>
+  asArray(raw).flatMap((item) => {
+    const note = toChapterNote(item);
+    if (!note) return [];
+    return [{ ...note, severity: asEnum(isRecord(item) ? item.severity : null, SEVERITIES) }];
+  });
+
+const toImprove = (raw: unknown): ImproveItem[] =>
+  asArray(raw).flatMap((item) => {
+    if (!isRecord(item)) return [];
+    const title = asText(item.title);
+    return title ? [{ title, why: asText(item.why) }] : [];
+  });
+
+const toMastery = (raw: unknown): ChapterMastery[] =>
+  asArray(raw).flatMap((item) => {
+    const note = toChapterNote(item);
+    if (!note || !isRecord(item)) return [];
+    return [
+      {
+        ...note,
+        correct: asNumber(item.correct),
+        total: asNumber(item.total),
+        verdict: parseVerdict(item.verdict),
+        summary: asText(item.summary),
+        improve: toImprove(item.improve),
+      },
+    ];
+  });
+
+/** practice: chỉ giữ chuỗi — RoadmapSteps dùng chính phần tử làm React key. */
+const toPractice = (raw: unknown): string[] =>
+  asArray(raw)
+    .map(asText)
+    .filter((item): item is string => !!item);
+
+export const toPathSteps = (raw: unknown): PathStep[] =>
+  asArray(raw).flatMap((item, i) => {
+    const note = toChapterNote(item);
+    if (!note || !isRecord(item)) return [];
+    return [
+      {
+        ...note,
+        order: asNumber(item.order) || i + 1,
+        goal: asText(item.goal),
+        why: asText(item.why),
+        practice: toPractice(item.practice),
+        estimatedSessions: asNumber(item.estimatedSessions) || undefined,
+      },
+    ];
+  });
+
+const LEVELS = ['beginner', 'developing', 'proficient', 'advanced'] as const;
+const CONFIDENCES = ['low', 'medium', 'high'] as const;
+
+/**
+ * Profile -> Analysis khi không có analysisResult (mindmap thiếu chapter_mastery).
+ * Các cột JSON này cũng do AI sinh ra rồi mới ghi DB, nên chuẩn hoá y như analysisResult.
+ */
+export const parseProfile = (profile: ProficiencyProfile): Analysis => {
+  const read = (raw: string | null): unknown => {
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  };
+
+  return {
+    level: profile.level,
+    summary: profile.summary ?? '',
+    confidence: null,
+    strengths: toChapterNotes(read(profile.strengths)),
+    weaknesses: toWeaknesses(read(profile.weaknesses)),
+    chapter_mastery: [],
+    recommended_path: toPathSteps(read(profile.recommendedPath)),
+    next_action: null,
+  };
+};
 
 /** Analysis đầy đủ từ attempt.analysisResult (có chapter_mastery cho mindmap). */
 export const parseAnalysisResult = (raw: string | null): Analysis | null => {
   if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw) as Partial<Analysis>;
-    if (!parsed || typeof parsed !== 'object') return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (!isRecord(parsed)) return null;
     return {
-      level: parsed.level ?? null,
-      summary: parsed.summary ?? '',
-      confidence: parsed.confidence ?? null,
-      strengths: parsed.strengths ?? [],
-      weaknesses: parsed.weaknesses ?? [],
-      chapter_mastery: normalizeMastery(parsed.chapter_mastery),
-      recommended_path: parsed.recommended_path ?? [],
-      next_action: parsed.next_action ?? null,
+      level: asEnum(parsed.level, LEVELS) ?? null,
+      summary: asText(parsed.summary) ?? '',
+      confidence: asEnum(parsed.confidence, CONFIDENCES) ?? null,
+      strengths: toChapterNotes(parsed.strengths),
+      weaknesses: toWeaknesses(parsed.weaknesses),
+      chapter_mastery: toMastery(parsed.chapter_mastery),
+      recommended_path: toPathSteps(parsed.recommended_path),
+      next_action: asText(parsed.next_action) ?? null,
     };
   } catch {
     return null;
