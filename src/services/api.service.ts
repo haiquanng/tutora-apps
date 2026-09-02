@@ -19,6 +19,73 @@ export const authHeader = (): Record<string, string> => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+const getRefreshToken = (): string | undefined => {
+  try {
+    const raw = localStorage.getItem(USER_LOCAL_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as { refreshToken?: string }).refreshToken : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const saveTokens = (accessToken: string, refreshToken?: string) => {
+  const raw = localStorage.getItem(USER_LOCAL_STORAGE_KEY);
+  const existing = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+  localStorage.setItem(USER_LOCAL_STORAGE_KEY, JSON.stringify({ ...existing, accessToken, refreshToken }));
+};
+
+export const clearSession = () => localStorage.removeItem(USER_LOCAL_STORAGE_KEY);
+
+/** Ai đó cần biết phiên vừa chết để đưa người dùng về trạng thái chưa đăng nhập. */
+type SessionExpiredHandler = () => void;
+let onSessionExpired: SessionExpiredHandler | null = null;
+export const setSessionExpiredHandler = (fn: SessionExpiredHandler | null) => {
+  onSessionExpired = fn;
+};
+
+let refreshInFlight: Promise<string | null> | null = null;
+
+const doRefresh = async (): Promise<string | null> => {
+  const accessToken = getAccessToken();
+  const refreshToken = getRefreshToken();
+  // BE bắt buộc CẢ HAI (TokenController.Refresh trả 400 nếu thiếu 1 trong 2).
+  if (!accessToken || !refreshToken) return null;
+
+  try {
+    const res = await fetch(`${BASE}/tokens/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ accessToken, refreshToken }),
+    });
+    if (!res.ok) return null;
+
+    const body = (await res.json()) as { content?: { token?: string; refreshToken?: string } };
+    const token = body.content?.token;
+    if (!token) return null;
+
+    saveTokens(token, body.content?.refreshToken);
+    return token;
+  } catch {
+    // Mạng chớp -> KHÔNG xoá phiên, để lần gọi sau thử lại.
+    return null;
+  }
+};
+
+export const refreshAccessToken = (): Promise<string | null> => {
+  if (!refreshInFlight) {
+    refreshInFlight = doRefresh().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+};
+
+/** Refresh hỏng -> phiên chết: dọn storage và báo cho AuthProvider. */
+export const handleSessionExpired = () => {
+  clearSession();
+  onSessionExpired?.();
+};
+
 export class ApiError extends Error {
   status: number;
   unauthorized: boolean;
@@ -72,15 +139,31 @@ const defaultErrorMessage = (status: number): string => {
 };
 
 const request = async <T>(method: string, path: string, opts: RequestOptions = {}): Promise<T> => {
-  const headers: Record<string, string> = { Accept: 'application/json', ...authHeader() };
-  const init: RequestInit = { method, credentials: 'include', headers, signal: opts.signal };
+  const url = buildUrl(path, opts.query);
+  const body = opts.body !== undefined ? JSON.stringify(opts.body) : undefined;
 
-  if (opts.body !== undefined) {
-    headers['Content-Type'] = 'application/json';
-    init.body = JSON.stringify(opts.body);
+  const fire = (token?: string) => {
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    // token truyền vào = vừa refresh xong; không có thì lấy từ storage.
+    const auth = token ? { Authorization: `Bearer ${token}` } : authHeader();
+    Object.assign(headers, auth);
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    return fetch(url, { method, credentials: 'include', headers, body, signal: opts.signal });
+  };
+
+  let res = await fire();
+
+  // 401 -> access token hết hạn (sống 1h).
+  // 403 KHÔNG retry: đó là thiếu quyền, refresh không cứu được.
+  if (res.status === 401) {
+    const token = await refreshAccessToken();
+    if (token) {
+      res = await fire(token);
+      if (res.status === 401) handleSessionExpired();
+    } else {
+      handleSessionExpired();
+    }
   }
-
-  const res = await fetch(buildUrl(path, opts.query), init);
 
   if (!res.ok) {
     throw new ApiError(res.status, opts.errorMessages?.[res.status] ?? defaultErrorMessage(res.status));

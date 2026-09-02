@@ -65,31 +65,32 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
   const pushVersion = canvas.pushVersion;
   const pushedRef = useRef<Set<string>>(new Set());
   const savingVersionsRef = useRef<Set<string>>(new Set());
-  const openNextCanvasRef = useRef(false);
   const [draggingCanvas, setDraggingCanvas] = useState(false);
 
   const [isLoadingHistory, setLoadingHistory] = useState(() => Boolean(chatId));
   // Phiên mở lại từ lịch sử (khác phiên vừa tạo tại chỗ) -> modal gợi ý được tự bật.
   const [openedFromHistory, setOpenedFromHistory] = useState(() => Boolean(chatId));
 
+  /**
+   * Dựng version canvas từ các turn đã giải xong.
+   */
   useEffect(() => {
-    if (!chatId) return;
-    if (turnsSessionId !== chatId || isLoadingHistory) return;
+    if (!turnsSessionId || isLoadingHistory) return;
     for (const t of turns) {
       if (t.isStreaming) continue;
-      if (!t.steps.length) {
-        if (!pushedRef.current.has(t.id)) {
-          pushedRef.current.add(t.id);
-          openNextCanvasRef.current = false;
-        }
-        continue;
-      }
       if (pushedRef.current.has(t.id)) continue;
       pushedRef.current.add(t.id);
-      const autoOpen = openNextCanvasRef.current;
-      openNextCanvasRef.current = false;
+
+      // Turn không có steps (BE trả markdown) -> không tạo version.
+      const wanted = t.wantedCanvas === true;
+      if (!t.steps.length) {
+        // Học sinh đã bật Canvas mà không nhận được steps -> nói cho biết, đừng im lặng.
+        if (wanted) toast.info('Lượt này Tutora trả lời dạng thường nên chưa dựng được canvas.');
+        continue;
+      }
+
       pushVersion(
-        chatId,
+        turnsSessionId,
         {
           label: t.question,
           steps: t.steps,
@@ -97,10 +98,10 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
           noteSaved: t.noteSaved,
           classification: t.classification,
         },
-        autoOpen,
+        wanted,
       );
     }
-  }, [turns, chatId, pushVersion, isLoadingHistory, turnsSessionId]);
+  }, [turns, pushVersion, isLoadingHistory, turnsSessionId]);
 
   const closeCanvas = useCallback(() => canvas.close(), [canvas.close]);
 
@@ -132,13 +133,19 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
     }
   }, [canvas, chatId, onNotesChange]);
 
-  // Đổi phiên (mở note khác / bài mới) -> reset canvas để không dính version bài cũ.
+  /**
+   * Đổi phiên (mở note khác / bài mới) -> reset canvas để không dính version bài cũ.
+   */
   const canvasReset = canvas.reset;
+  const lastResetRef = useRef<string | null>(null);
   useEffect(() => {
+    const key = turnsSessionId || chatId || '';
+    if (lastResetRef.current === key) return;
+    lastResetRef.current = key;
     canvasReset();
     pushedRef.current = new Set();
     savingVersionsRef.current = new Set();
-  }, [chatId, canvasReset]);
+  }, [chatId, turnsSessionId, canvasReset]);
 
   const handleSend = useCallback(
     (payload: SubmitPayload, isFollowUp: boolean) => {
@@ -147,7 +154,6 @@ export const HomeworkPage = ({ onSolved, onNotesChange }: Props) => {
         login();
         return;
       }
-      if (payload.wantCanvas) openNextCanvasRef.current = true;
       if (isFollowUp) session.sendFollowUp(payload.text ?? '', payload.imageDataUrl, payload.wantCanvas);
       else session.submit(payload);
     },

@@ -23,6 +23,8 @@ export const useSolveSession = ({ onSessionStart, onSolved, onOutOfCredit }: Opt
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // State (không chỉ ref): trang ngoài cần re-render khi phiên vừa được tạo.
+  const [sessionId, setSessionId] = useState('');
 
   const sessionIdRef = useRef<string>('');
   const abortRef = useRef<(() => void) | null>(null);
@@ -59,6 +61,7 @@ export const useSolveSession = ({ onSessionStart, onSolved, onOutOfCredit }: Opt
           // Phiên phải tồn tại ở BE trước khi stream (BE kiểm quyền sở hữu).
           const session = await createSession(ask.slice(0, 100));
           sessionIdRef.current = session.sessionId;
+          setSessionId(session.sessionId);
           onSessionStart?.(session.sessionId);
         } catch {
           setError('Không tạo được phiên hỏi bài. Vui lòng thử lại.');
@@ -75,6 +78,7 @@ export const useSolveSession = ({ onSessionStart, onSolved, onOutOfCredit }: Opt
         steps: [],
         thinking: '',
         isStreaming: true,
+        wantedCanvas: payload.wantCanvas === true,
       };
       setTurns((prev) => [...prev, turn]);
 
@@ -142,6 +146,7 @@ export const useSolveSession = ({ onSessionStart, onSolved, onOutOfCredit }: Opt
   const reset = useCallback(() => {
     abortRef.current?.();
     sessionIdRef.current = '';
+    setSessionId('');
     setTurns([]);
     setError(null);
     setIsStreaming(false);
@@ -151,6 +156,7 @@ export const useSolveSession = ({ onSessionStart, onSolved, onOutOfCredit }: Opt
   const loadFromHistory = useCallback((item: HistoryItem) => {
     abortRef.current?.();
     sessionIdRef.current = item.sessionId;
+    setSessionId(item.sessionId);
     modeRef.current = item.mode;
     setTurns(item.turns ?? []);
     setError(null);
@@ -159,7 +165,7 @@ export const useSolveSession = ({ onSessionStart, onSolved, onOutOfCredit }: Opt
 
   return {
     turns,
-    sessionId: sessionIdRef.current,
+    sessionId,
     isStreaming,
     error,
     submit,

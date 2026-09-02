@@ -1,4 +1,12 @@
-import { authHeader, BACKEND_URL, USER_LOCAL_STORAGE_KEY, WEB_URL } from './api.service';
+import {
+  authHeader,
+  BACKEND_URL,
+  clearSession,
+  handleSessionExpired,
+  refreshAccessToken,
+  USER_LOCAL_STORAGE_KEY,
+  WEB_URL,
+} from './api.service';
 
 export interface AuthUser {
   id?: string;
@@ -21,6 +29,8 @@ const readLocalFallback = (): LocalUser | null => {
     return null;
   }
 };
+
+const hasProfile = (u: LocalUser | null): u is LocalUser => Boolean(u && (u.id || u.email || u.fullName));
 
 /**
  * Web chính bàn giao phiên qua fragment (#accessToken=...&refreshToken=...) vì
@@ -50,20 +60,37 @@ export const fetchCurrentUser = async (): Promise<AuthUser | null> => {
   const local = readLocalFallback();
 
   try {
-    const response = await fetch(`${BACKEND_URL}/api/users/profile`, {
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        ...authHeader(),
-      },
-    });
-    // 401/404 -> chưa đăng nhập hoặc BE chưa sẵn sàng; đừng chặn UI.
-    if (!response.ok) return local;
+    const fire = (token?: string) =>
+      fetch(`${BACKEND_URL}/api/users/profile`, {
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : authHeader()),
+        },
+      });
+
+    let response = await fire();
+
+    // 401 = access token hết hạn -> refresh rồi thử lại, ĐỪNG coi là mất phiên ngay.
+    if (response.status === 401) {
+      const token = await refreshAccessToken();
+      if (!token) {
+        handleSessionExpired();
+        return null;
+      }
+      response = await fire(token);
+      if (response.status === 401) {
+        handleSessionExpired();
+        return null;
+      }
+    }
+
+    if (!response.ok) return hasProfile(local) ? local : null;
 
     const body = await response.json();
     // BE .NET bọc payload trong { content: ... } ở hầu hết endpoint.
     const raw = (body?.content ?? body) as Record<string, unknown> | null;
-    if (!raw) return local;
+    if (!raw) return hasProfile(local) ? local : null;
 
     return {
       id: (raw.userid ?? raw.userId) as string | undefined,
@@ -73,7 +100,8 @@ export const fetchCurrentUser = async (): Promise<AuthUser | null> => {
       role: raw.role as string | undefined,
     };
   } catch {
-    return local;
+    // Mạng lỗi -> giữ phiên cũ nếu đã biết là ai, đừng đá người dùng ra.
+    return hasProfile(local) ? local : null;
   }
 };
 
@@ -128,7 +156,7 @@ export const logout = async () => {
   } catch {
     /* best effort — vẫn xoá phía client dù server lỗi */
   }
-  localStorage.removeItem(USER_LOCAL_STORAGE_KEY);
+  clearSession();
   window.location.reload();
 };
 

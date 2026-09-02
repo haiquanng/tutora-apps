@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { AuthContext } from './authContext';
 import type { AuthValue } from './authContext';
 import { consumeSessionFromUrl, fetchCurrentUser, logout } from '../services/auth.service';
+import { setSessionExpiredHandler } from '../services/api.service';
 import type { AuthUser } from '../services/auth.service';
 import { LoginModal } from '../components/auth/LoginModal';
 
@@ -13,6 +14,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setLoading] = useState(true);
   const [isLoginOpen, setLoginOpen] = useState(false);
   const lastUserId = useRef<string | undefined>(undefined);
+
+  /**
+   * Refresh token hỏng ở BẤT KỲ request nào -> phiên chết thật.
+   */
+  useEffect(() => {
+    setSessionExpiredHandler(() => setUser(null));
+    return () => setSessionExpiredHandler(null);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
