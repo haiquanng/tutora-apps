@@ -1,5 +1,5 @@
 import type { AnswerTrust, SolutionStep, SolveChunk, SolveRequest, TopicClassification } from '../types/solve';
-import { authHeader, BACKEND_URL } from './api.service';
+import { authHeader, BACKEND_URL, handleSessionExpired, refreshAccessToken } from './api.service';
 
 export interface StreamHandlers {
   onDelta: (accumulated: string, delta: string) => void;
@@ -32,14 +32,33 @@ export const streamSolve = (sessionId: string, body: SolveRequest, handlers: Str
   const controller = new AbortController();
 
   const run = async () => {
-    const response = await fetch(`${BACKEND_URL}/api/ai-chat/sessions/${encodeURIComponent(sessionId)}/solve`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeader() },
-      // Phiên nằm ở cookie .tutora.vn (xem auth.service), không phải Bearer token.
-      credentials: 'include',
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
+    const url = `${BACKEND_URL}/api/ai-chat/sessions/${encodeURIComponent(sessionId)}/solve`;
+    const payload = JSON.stringify(body);
+
+    const fire = (token?: string) =>
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : authHeader()),
+        },
+        credentials: 'include',
+        body: payload,
+        signal: controller.signal,
+      });
+
+    let response = await fire();
+
+    // Access token sống 1h; stream dài + để tab lâu là dính 401. Refresh rồi gửi lại.
+    if (response.status === 401) {
+      const token = await refreshAccessToken();
+      if (token) {
+        response = await fire(token);
+        if (response.status === 401) handleSessionExpired();
+      } else {
+        handleSessionExpired();
+      }
+    }
 
     if (response.status === 402) {
       throw new OutOfCreditError();
