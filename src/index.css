@@ -8,6 +8,8 @@
   --color-gold: #d4b483;
   --color-forest: #3d4a3e;
 
+  --breakpoint-2xl: 96rem;
+
   --font-sans: 'Bricolage Grotesque', system-ui, sans-serif;
   --font-serif: 'IBM Plex Serif', Georgia, serif;
 

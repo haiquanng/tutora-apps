@@ -203,7 +203,7 @@ export const AssessmentResultPage = () => {
 
   return (
     <div className="min-h-screen bg-cream">
-      <div className="mx-auto max-w-(--breakpoint-2xl) px-6 py-10 2xl:px-10">
+      <div className="mx-auto w-full max-w-(--breakpoint-2xl) px-6 py-10 2xl:px-10">
         <button
           type="button"
           onClick={() => navigate(backTo)}
