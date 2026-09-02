@@ -69,6 +69,7 @@ export interface ChatTurn {
   isStreaming?: boolean;
   noteSaved?: boolean;
   trust?: AnswerTrust;
+  wantedCanvas?: boolean;
 }
 
 /** Một phiên hỏi bài, lưu ở history (localStorage). */
