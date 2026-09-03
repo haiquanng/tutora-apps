@@ -84,7 +84,6 @@ export const AccountMenu = ({ aiBalance }: Props) => {
             </span>
             <span className="min-w-0">
               <span className="block truncate font-semibold text-navy">{user.fullName || 'Học sinh'}</span>
-              {user.email && <span className="block truncate text-xs text-navy/50">{user.email}</span>}
             </span>
           </div>
 

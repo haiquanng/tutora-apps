@@ -20,10 +20,7 @@ export const fetchNextPractice = (params: {
   questionText?: string;
   difficulty?: string;
 }): Promise<PracticeQuestion | null> =>
-  api
-    .get<PracticeQuestion | null>('/practice/next', { query: params })
-    .then((r) => r ?? null)
-    .catch(() => null);
+  api.get<PracticeQuestion | null>('/practice/next', { query: params }).then((r) => r ?? null);
 
 /** Ghi nhận lượt luyện. Không trả thống kê — đây không phải app tracking học tập. */
 export const submitPractice = (body: {

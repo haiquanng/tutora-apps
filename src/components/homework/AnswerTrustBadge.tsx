@@ -1,4 +1,4 @@
-import { ArrowUpRight, BadgeCheck, BookCheck, Calculator, HelpCircle } from 'lucide-react';
+import { ArrowUpRight, BadgeCheck, BookCheck, HelpCircle } from 'lucide-react';
 import type { AnswerTrust } from '../../types/solve';
 
 /**
@@ -17,12 +17,6 @@ const TIERS = {
     hint: 'Mình bám theo cách giải của bài tương tự đã được gia sư duyệt.',
     className: 'border-sky-600/30 bg-sky-50 text-sky-700',
   },
-  computed: {
-    icon: Calculator,
-    label: 'Đã kiểm tra đáp số',
-    hint: 'Mình tính lại đáp số để đối chiếu.',
-    className: 'border-violet-600/30 bg-violet-50 text-violet-700',
-  },
   unsure: {
     icon: HelpCircle,
     label: 'Chưa chắc chắn',
@@ -38,7 +32,7 @@ const pickTier = (trust?: AnswerTrust): keyof typeof TIERS | null => {
   if (trust.bankVerified) return 'bank';
   if (trust.verified === false) return 'unsure';
   if (trust.ragUsed) return 'rag';
-  if (trust.verified === true) return 'computed';
+  // Bỏ nhãn "Đã kiểm tra đáp số": verified === true không còn hiện gì.
   return null;
 };
 
