@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Dumbbell, ExternalLink, Loader2 } from 'lucide-react';
 import { MathText } from '../ui/MathText';
 import { Markdown } from './Markdown';
@@ -38,14 +39,20 @@ export const PracticeCard = ({ chapter, questionText }: Props) => {
   const [showSolution, setShowSolution] = useState(false);
   // const [isAssessed, setAssessed] = useState(false);
   const [isLoading, setLoading] = useState(false);
-  const [isDone, setDone] = useState(false);
 
+  // Hết bài / lỗi mạng đều KHÔNG ẩn thẻ: báo toast rồi để nguyên nút, học sinh
+  // bấm lại được. Ẩn đi khiến nút tự dưng biến mất, không hiểu vì sao.
   const start = async () => {
     setLoading(true);
-    const q = await fetchNextPractice({ chapter, questionText });
-    setLoading(false);
-    if (!q) setDone(true);
-    else setQuestion(q);
+    try {
+      const q = await fetchNextPractice({ chapter, questionText });
+      if (q) setQuestion(q);
+      else toast.info('Dạng bài này chưa có bài tương tự trên hệ thống.');
+    } catch {
+      toast.error('Không tải được bài luyện tập. Bạn thử lại nhé.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // const assess = async (selfAssessment: SelfAssessment) => {
@@ -65,8 +72,6 @@ export const PracticeCard = ({ chapter, questionText }: Props) => {
     // setAssessed(false);
     void start();
   };
-
-  if (isDone) return null;
 
   if (!question) {
     return (
